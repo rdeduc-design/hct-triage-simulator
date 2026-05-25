@@ -3,776 +3,115 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CODE RED — Triage Simulator</title>
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<title>HCT Disaster Triage Simulator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
-:root{--black:#0a0a0f;--panel:#12121a;--panel2:#1a1a2e;--border:#2a2a4a;--teal:#00e5c8;--teal2:#00b09b;--red:#ff4757;--yellow:#ffa502;--green:#2ed573;--purple:#a855f7;--white:#e8e8f0;--muted:#8888aa;--font-pixel:'Press Start 2P',monospace;--font-body:'Nunito',sans-serif;}
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-html,body{min-height:100vh;}
-body{background:var(--black);color:var(--white);font-family:var(--font-body);overflow-x:hidden;}
-body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.06) 2px,rgba(0,0,0,0.06) 4px);pointer-events:none;z-index:9999;}
-.screen{display:none;}
-.screen.active{display:block;animation:fadeIn 0.3s ease;}
-@keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
-/* ── HOME ── */
-#screen-home{min-height:100vh;display:none;flex-direction:column;align-items:center;justify-content:flex-start;padding:2rem 1rem;position:relative;}
-#screen-home.active{display:flex;}
-.home-bg{position:fixed;inset:0;background:radial-gradient(ellipse at 20% 50%,rgba(0,229,200,0.05),transparent 60%),radial-gradient(ellipse at 80% 30%,rgba(255,71,87,0.05),transparent 60%);pointer-events:none;z-index:0;}
-.logo-area{text-align:center;margin-bottom:2rem;z-index:1;margin-top:.5rem;}
-.logo-title{font-family:var(--font-pixel);font-size:clamp(16px,4vw,34px);color:var(--teal);text-shadow:0 0 20px rgba(0,229,200,0.5),0 0 40px rgba(0,229,200,0.25);letter-spacing:4px;line-height:1.4;animation:glitch 5s infinite;}
-.logo-sub{font-family:var(--font-pixel);font-size:clamp(6px,1.5vw,10px);color:var(--red);margin-top:8px;letter-spacing:3px;animation:blink 1.2s infinite;}
-@keyframes glitch{0%,89%,100%{text-shadow:0 0 20px rgba(0,229,200,0.5);}91%{text-shadow:-2px 0 var(--red),2px 0 var(--teal);}93%{text-shadow:2px 0 var(--purple),-2px 0 var(--yellow);}}
-@keyframes blink{0%,49%{opacity:1;}50%,100%{opacity:0.3;}}
-.home-scene{width:100%;max-width:680px;height:130px;position:relative;background:linear-gradient(to bottom,#0d1117 55%,#0a2d1a 55%);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:1.5rem;z-index:1;}
-.ground-stripe-home{position:absolute;top:55%;left:0;right:0;height:2px;background:rgba(0,229,200,0.2);}
-.home-pat{position:absolute;bottom:45%;font-size:26px;animation:homeWalk 9s linear infinite;}
-@keyframes homeWalk{from{left:-60px;}to{left:calc(100% + 60px);}}
-.home-scene-lbl{position:absolute;top:8px;left:12px;font-family:var(--font-pixel);font-size:7px;color:rgba(0,229,200,0.5);}
-.home-cross{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:40px;opacity:0.1;}
-.mode-section{width:100%;max-width:680px;z-index:1;}
-.section-label{font-family:var(--font-pixel);font-size:8px;color:var(--muted);letter-spacing:2px;margin-bottom:12px;}
-.mode-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-bottom:1rem;}
-.mode-card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:1.1rem;cursor:pointer;transition:border-color .2s,transform .15s;position:relative;overflow:hidden;}
-.mode-card:hover{border-color:var(--teal);transform:translateY(-2px);}
-.mode-card:active{transform:scale(0.97);}
-.mc-icon{font-size:26px;margin-bottom:8px;}
-.mc-title{font-family:var(--font-pixel);font-size:8px;color:var(--teal);margin-bottom:7px;line-height:1.5;}
-.mc-desc{font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:9px;}
-.mc-badge{font-family:var(--font-pixel);font-size:6px;padding:3px 7px;border-radius:3px;display:inline-block;}
-.badge-easy{background:rgba(46,213,115,.12);color:var(--green);border:1px solid rgba(46,213,115,.3);}
-.badge-med{background:rgba(255,165,2,.12);color:var(--yellow);border:1px solid rgba(255,165,2,.3);}
-.badge-hard{background:rgba(255,71,87,.12);color:var(--red);border:1px solid rgba(255,71,87,.3);}
-.badge-ex{background:rgba(168,85,247,.12);color:var(--purple);border:1px solid rgba(168,85,247,.3);}
-.quickref-btn{background:transparent;border:1px solid var(--border);color:var(--muted);font-family:var(--font-body);font-size:12px;padding:8px 14px;border-radius:6px;cursor:pointer;width:100%;text-align:left;margin-top:6px;transition:all .2s;}
-.quickref-btn:hover{border-color:var(--teal);color:var(--white);}
-.quickref-panel{display:none;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:1.1rem;margin-top:8px;}
-.quickref-panel.open{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;}
-.qr-col h4{font-family:var(--font-pixel);font-size:7px;color:var(--teal);margin-bottom:9px;}
-.qr-row{display:flex;gap:8px;margin-bottom:7px;font-size:11px;color:var(--muted);line-height:1.6;}
-.qr-dot{width:9px;height:9px;border-radius:2px;flex-shrink:0;margin-top:3px;}
-/* ── HUD ── */
-.hud{background:var(--panel);border-bottom:1px solid var(--border);padding:8px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;position:sticky;top:0;z-index:50;}
-.hud-logo{font-family:var(--font-pixel);font-size:9px;color:var(--teal);letter-spacing:2px;}
-.hud-score{font-family:var(--font-pixel);font-size:12px;color:var(--yellow);}
-.hud-lives{display:flex;gap:3px;}
-.heart{font-size:13px;transition:opacity .3s;}
-.heart.empty{opacity:.2;}
-.hud-right{display:flex;align-items:center;gap:12px;margin-left:auto;flex-wrap:wrap;}
-.hud-streak{font-family:var(--font-pixel);font-size:8px;padding:3px 9px;background:rgba(255,165,2,.12);border:1px solid rgba(255,165,2,.35);border-radius:3px;color:var(--yellow);}
-.hud-counter{font-size:12px;color:var(--muted);}
-.prog-wrap{width:80px;height:5px;background:var(--border);border-radius:99px;overflow:hidden;}
-.prog-fill{height:100%;background:linear-gradient(90deg,var(--teal2),var(--teal));border-radius:99px;transition:width .4s;}
-.hud-mode{font-family:var(--font-pixel);font-size:6px;color:var(--purple);padding:3px 7px;background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.25);border-radius:3px;}
-.quit-btn{background:transparent;border:1px solid var(--border);color:var(--muted);font-size:11px;padding:4px 10px;border-radius:4px;cursor:pointer;font-family:var(--font-body);transition:all .15s;}
-.quit-btn:hover{border-color:var(--red);color:var(--red);}
-/* TIMER */
-.timer-wrap{height:4px;background:var(--border);}
-.timer-fill{height:100%;width:100%;transition:width .1s linear,background .4s;}
-/* GAME LAYOUT */
-#screen-game{min-height:100vh;display:none;flex-direction:column;}
-#screen-game.active{display:flex;}
-.game-main{display:grid;grid-template-columns:1fr 370px;flex:1;min-height:0;}
-/* SCENE */
-.scene-vp{background:linear-gradient(to bottom,#0d1117 55%,#0a2a18 55%);position:relative;overflow:hidden;min-height:340px;}
-.scene-ground{position:absolute;bottom:0;left:0;right:0;height:45%;background:linear-gradient(180deg,#0f3520,#061810);}
-.ground-line{position:absolute;bottom:44.5%;left:0;right:0;height:2px;background:rgba(0,229,200,.18);}
-.scene-lbl{position:absolute;top:10px;left:14px;font-family:var(--font-pixel);font-size:7px;color:rgba(0,229,200,.6);}
-.scene-algo{position:absolute;top:10px;right:14px;font-family:var(--font-pixel);font-size:6px;padding:3px 8px;border-radius:3px;}
-.algo-start{background:rgba(0,229,200,.08);color:var(--teal);border:1px solid rgba(0,229,200,.25);}
-.algo-jump{background:rgba(168,85,247,.08);color:var(--purple);border:1px solid rgba(168,85,247,.25);}
-/* env decorations */
-.env-el{position:absolute;font-size:20px;opacity:.45;bottom:44%;}
-.amb-el{position:absolute;right:14px;bottom:44%;font-size:28px;animation:abounce .9s ease-in-out infinite alternate;}
-@keyframes abounce{from{transform:translateY(0);}to{transform:translateY(-4px);}}
-/* PATIENT */
-.patient-char{position:absolute;bottom:44%;left:50%;transform:translateX(-50%);}
-.p-sprite{font-size:52px;display:block;transform-origin:bottom center;transition:transform .4s ease-in-out;}
-.p-sprite.lying{transform:rotate(90deg) translateX(16px);transform-origin:center;}
-.p-nametag{position:absolute;top:-42px;left:50%;transform:translateX(-50%);white-space:nowrap;background:rgba(0,0,0,.85);border:1px solid var(--border);border-radius:4px;padding:3px 9px;font-family:var(--font-pixel);font-size:6px;color:var(--white);}
-.status-ico{position:absolute;top:-64px;left:50%;transform:translateX(-50%);font-size:18px;animation:floatIco .9s ease-in-out infinite alternate;}
-@keyframes floatIco{from{transform:translateX(-50%) translateY(0);}to{transform:translateX(-50%) translateY(-5px);}}
-/* FOOTPRINTS */
-.walk-trail{position:absolute;bottom:42%;left:0;right:0;display:flex;gap:14px;padding-left:10%;opacity:0;transition:opacity .3s;}
-.walk-trail.active{opacity:1;}
-.fp{font-size:10px;animation:fpFade 1.2s ease-out infinite;}
-@keyframes fpFade{from{opacity:.7;}to{opacity:0;}}
-/* BREATH WAVE */
-.breath-wave{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);display:flex;align-items:flex-end;gap:2px;}
-.bw-bar{width:3px;border-radius:1px;animation:bwAnim 1s ease-in-out infinite alternate;transform-origin:bottom;}
-@keyframes bwAnim{from{transform:scaleY(.15);}to{transform:scaleY(1);}}
-.apnea-lbl{font-family:var(--font-pixel);font-size:7px;color:var(--red);}
-/* VITALS OVERLAY */
-.vitals-ov{position:absolute;left:10px;bottom:10px;background:rgba(8,8,14,.92);border:1px solid rgba(0,229,200,.35);border-radius:6px;padding:9px 12px;min-width:160px;}
-.vov-title{font-family:var(--font-pixel);font-size:6px;color:var(--teal);margin-bottom:7px;}
-.vov-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
-.vov-k{font-size:9px;color:var(--muted);}
-.vov-v{font-family:var(--font-pixel);font-size:8px;}
-.vc-ok{color:var(--green);}
-.vc-warn{color:var(--yellow);}
-.vc-crit{color:var(--red);}
-/* RIGHT PANEL */
-.right-panel{background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;max-height:calc(100vh - 60px);}
-.patient-card{padding:1.1rem;border-bottom:1px solid var(--border);}
-.p-header{display:flex;align-items:center;gap:10px;margin-bottom:.9rem;}
-.p-avatar{width:40px;height:40px;border-radius:50%;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:20px;border:2px solid var(--border);}
-.p-name{font-size:14px;font-weight:700;}
-.p-info{font-size:10px;color:var(--muted);margin-top:2px;}
-.p-narrative{font-size:12px;line-height:1.7;color:var(--muted);margin-bottom:.8rem;}
-.finding{font-size:11px;padding:6px 9px;border-left:2px solid var(--border);background:var(--panel2);border-radius:0 4px 4px 0;margin-bottom:4px;line-height:1.5;}
-.finding.ok{border-color:var(--green);}
-.finding.warn{border-color:var(--yellow);}
-.finding.crit{border-color:var(--red);color:var(--white);}
-/* TAG BUTTONS */
-.tag-section{padding:.9rem 1.1rem;border-bottom:1px solid var(--border);}
-.tag-lbl{font-family:var(--font-pixel);font-size:6px;color:var(--muted);margin-bottom:9px;letter-spacing:1px;}
-.tag-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
-.tag-btn{padding:11px 7px;border-radius:6px;border:2px solid transparent;font-family:var(--font-pixel);font-size:7px;cursor:pointer;text-align:center;line-height:1.6;transition:all .15s;position:relative;}
-.tag-btn:hover{transform:translateY(-2px);}
-.tag-btn:active{transform:scale(.96);}
-.tag-btn:disabled{opacity:.35;cursor:not-allowed;transform:none!important;}
-.tb-k{background:#1c1c1c;color:#ddd;border-color:#444;}
-.tb-r{background:rgba(255,71,87,.12);color:var(--red);border-color:rgba(255,71,87,.45);}
-.tb-y{background:rgba(255,165,2,.12);color:var(--yellow);border-color:rgba(255,165,2,.45);}
-.tb-g{background:rgba(46,213,115,.12);color:var(--green);border-color:rgba(46,213,115,.45);}
-/* FEEDBACK */
-.feedback-wrap{padding:.9rem 1.1rem;flex:1;}
-.fb-box{border-radius:7px;padding:.9rem;display:none;}
-.fb-box.correct{background:rgba(46,213,115,.07);border:1px solid rgba(46,213,115,.25);}
-.fb-box.wrong{background:rgba(255,71,87,.07);border:1px solid rgba(255,71,87,.25);}
-.fb-box.timeout{background:rgba(255,165,2,.07);border:1px solid rgba(255,165,2,.25);}
-.fb-title{font-family:var(--font-pixel);font-size:8px;margin-bottom:9px;}
-.fb-title.correct{color:var(--green);}
-.fb-title.wrong{color:var(--red);}
-.fb-title.timeout{color:var(--yellow);}
-.fb-body{font-size:11px;line-height:1.7;color:var(--muted);}
-.fb-body strong{color:var(--white);}
-.next-btn{display:none;margin:.9rem 1.1rem;padding:11px;background:var(--teal);color:#000;border:none;border-radius:6px;font-family:var(--font-pixel);font-size:8px;cursor:pointer;letter-spacing:1px;transition:all .15s;}
-.next-btn:hover{background:var(--teal2);}
-/* TOASTS */
-.combo-toast{position:fixed;top:72px;left:50%;transform:translateX(-50%);font-family:var(--font-pixel);font-size:10px;padding:7px 18px;border-radius:5px;background:rgba(255,165,2,.92);color:#000;display:none;z-index:200;animation:tpop .3s cubic-bezier(.34,1.56,.64,1);}
-@keyframes tpop{from{transform:translateX(-50%) scale(.7);}to{transform:translateX(-50%) scale(1);}}
-.particle{position:fixed;pointer-events:none;font-size:16px;animation:pflyUp 1s ease-out forwards;z-index:300;}
-@keyframes pflyUp{from{opacity:1;transform:translateY(0);}to{opacity:0;transform:translateY(-70px);}}
-/* RESULTS */
-#screen-results{min-height:100vh;display:none;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1rem;}
-#screen-results.active{display:flex;}
-.res-bg{position:fixed;inset:0;background:radial-gradient(ellipse at center,rgba(0,229,200,.05),transparent 70%);pointer-events:none;}
-.res-title{font-family:var(--font-pixel);font-size:clamp(11px,2.5vw,20px);color:var(--teal);letter-spacing:3px;margin-bottom:4px;}
-.res-sub{font-family:var(--font-pixel);font-size:8px;color:var(--muted);letter-spacing:2px;margin-bottom:1.5rem;}
-.res-score{font-family:var(--font-pixel);font-size:clamp(36px,8vw,68px);color:var(--yellow);line-height:1;margin-bottom:8px;text-shadow:0 0 30px rgba(255,165,2,.4);}
-.res-rank{font-family:var(--font-pixel);font-size:9px;padding:5px 18px;border-radius:3px;margin-bottom:1.5rem;display:inline-block;}
-.rank-s{background:rgba(255,215,0,.12);color:gold;border:1px solid gold;}
-.rank-a{background:rgba(0,229,200,.12);color:var(--teal);border:1px solid var(--teal);}
-.rank-b{background:rgba(168,85,247,.12);color:var(--purple);border:1px solid var(--purple);}
-.rank-c{background:rgba(255,165,2,.12);color:var(--yellow);border:1px solid var(--yellow);}
-.rank-d{background:rgba(255,71,87,.12);color:var(--red);border:1px solid var(--red);}
-.tag-breakdown{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:1.5rem;width:100%;max-width:560px;}
-.tbc{border-radius:7px;padding:12px 8px;text-align:center;}
-.tbc-k{background:#191919;border:1px solid #444;}
-.tbc-r{background:rgba(255,71,87,.09);border:1px solid rgba(255,71,87,.28);}
-.tbc-y{background:rgba(255,165,2,.09);border:1px solid rgba(255,165,2,.28);}
-.tbc-g{background:rgba(46,213,115,.09);border:1px solid rgba(46,213,115,.28);}
-.tbc-num{font-family:var(--font-pixel);font-size:18px;margin-bottom:3px;}
-.tbc-k .tbc-num{color:#ddd;} .tbc-r .tbc-num{color:var(--red);} .tbc-y .tbc-num{color:var(--yellow);} .tbc-g .tbc-num{color:var(--green);}
-.tbc-lbl{font-size:10px;color:var(--muted);}
-.stats-row{display:flex;gap:20px;margin-bottom:1.5rem;flex-wrap:wrap;justify-content:center;}
-.stat-item{text-align:center;}
-.stat-num{font-family:var(--font-pixel);font-size:16px;color:var(--teal);}
-.stat-lbl{font-size:10px;color:var(--muted);margin-top:2px;}
-.xp-wrap{width:100%;max-width:380px;margin-bottom:1.5rem;}
-.xp-row{font-family:var(--font-pixel);font-size:6px;color:var(--muted);display:flex;justify-content:space-between;margin-bottom:5px;}
-.xp-bar{height:8px;background:var(--border);border-radius:99px;overflow:hidden;}
-.xp-fill{height:100%;background:linear-gradient(90deg,var(--purple),var(--teal));border-radius:99px;width:0;transition:width 1.5s ease;}
-.res-msg{font-size:13px;color:var(--muted);max-width:480px;text-align:center;line-height:1.7;margin-bottom:1.5rem;}
-.res-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
-.btn-pix{font-family:var(--font-pixel);font-size:8px;padding:11px 22px;border-radius:5px;border:none;cursor:pointer;transition:all .15s;letter-spacing:1px;}
-.btn-pix:hover{transform:translateY(-2px);}
-.btn-main{background:var(--teal);color:#000;}
-.btn-sec{background:transparent;color:var(--teal);border:1px solid var(--teal);}
-/* responsive */
-@media(max-width:680px){.game-main{grid-template-columns:1fr;}.scene-vp{min-height:220px;}.right-panel{max-height:none;}.quickref-panel.open{grid-template-columns:1fr;}}
+:root{--bg:#07090d;--panel:#101720;--panel2:#151f2c;--line:#29384a;--text:#edf4ff;--muted:#9babc0;--red:#ff3b42;--yellow:#ffd400;--green:#21d66b;--black:#050506;--cyan:#37d5ff;--orange:#ff8a22;--violet:#a879ff;--shadow:0 18px 60px rgba(0,0,0,.38)}
+*{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif}button,input,select{font:inherit}button{cursor:pointer}#app{height:100%;display:grid;grid-template-rows:auto 1fr;background:radial-gradient(circle at 30% 10%,rgba(55,213,255,.12),transparent 34%),#07090d}.top{height:64px;display:flex;align-items:center;gap:14px;padding:0 18px;border-bottom:1px solid var(--line);background:rgba(8,13,20,.94);backdrop-filter:blur(14px);z-index:10}.brand{display:flex;align-items:center;gap:12px;min-width:270px}.mark{width:38px;height:38px;border:2px solid var(--cyan);display:grid;place-items:center;border-radius:8px;color:var(--cyan);font-weight:900;box-shadow:0 0 26px rgba(55,213,255,.28)}h1{margin:0;font-size:17px;line-height:1.1}.sub{font-size:11px;color:var(--muted);margin-top:2px}.stats{display:flex;gap:10px;align-items:center;margin-left:auto;flex-wrap:wrap}.pill{border:1px solid var(--line);background:#0b111a;border-radius:8px;padding:7px 9px;font-size:12px;color:var(--muted)}.pill strong{color:var(--text)}.btn{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:8px;padding:8px 10px;font-weight:800;font-size:12px}.btn:hover{border-color:var(--cyan)}.btn.primary{background:var(--cyan);border-color:var(--cyan);color:#061018}.btn.red{background:rgba(255,59,66,.12);border-color:rgba(255,59,66,.4);color:#ffb8bb}.btn.ghost{background:transparent}.main{position:relative;min-height:0}.viewport{position:absolute;inset:0;background:#090c10}.world{width:100%;height:100%;display:block;cursor:crosshair}.reticle{position:absolute;left:50%;top:50%;width:22px;height:22px;transform:translate(-50%,-50%);pointer-events:none}.reticle:before,.reticle:after{content:"";position:absolute;background:rgba(255,255,255,.8)}.reticle:before{left:10px;top:0;width:2px;height:22px}.reticle:after{left:0;top:10px;width:22px;height:2px}.hud{position:absolute;left:16px;top:16px;display:grid;gap:8px;pointer-events:none}.card{background:rgba(10,16,24,.86);border:1px solid rgba(255,255,255,.12);border-radius:8px;box-shadow:var(--shadow);padding:10px}.scenario-title{font-weight:900;font-size:14px}.small{font-size:11px;color:var(--muted);line-height:1.45}.controls{position:absolute;left:16px;bottom:16px;width:300px}.radio{position:absolute;right:16px;top:16px;width:310px;max-height:180px;overflow:hidden}.radio-line{font-family:"JetBrains Mono",monospace;font-size:11px;color:#c9f6ff;margin:0 0 6px}.prompt{position:absolute;left:50%;bottom:84px;transform:translateX(-50%);background:rgba(6,10,15,.92);border:1px solid var(--cyan);border-radius:8px;padding:10px 14px;font-weight:900;box-shadow:0 0 30px rgba(55,213,255,.2);display:none}.prompt kbd{border:1px solid #fff;background:#fff;color:#111;border-radius:4px;padding:2px 6px;margin-right:6px}.right{position:absolute;right:16px;bottom:16px;width:360px;max-height:calc(100% - 230px);display:grid;gap:10px}.panel{background:rgba(10,16,24,.92);border:1px solid rgba(255,255,255,.13);border-radius:10px;box-shadow:var(--shadow);overflow:hidden}.panel-head{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.04)}.panel-head strong{font-size:13px}.panel-body{padding:12px}.victim-list{display:grid;gap:7px;max-height:190px;overflow:auto}.victim-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:8px;background:#0d141d}.tag{font-weight:900;border-radius:5px;padding:3px 6px;font-size:11px}.tag.green{background:var(--green);color:#051408}.tag.yellow{background:var(--yellow);color:#141100}.tag.red{background:var(--red);color:#fff}.tag.black{background:#000;color:#fff;border:1px solid #777}.menu{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(520px,92vw);background:#0a111a;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);display:none;z-index:30}.menu.open{display:block}.menu-title{padding:14px 16px;border-bottom:1px solid var(--line);font-weight:900}.menu-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:14px}.menu-grid button{min-height:48px;border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:8px;font-weight:800}.menu-grid button:hover{border-color:var(--cyan)}.tag-grid button{min-height:54px}.tag-grid .green{background:rgba(33,214,107,.15);color:#a8ffc8;border-color:rgba(33,214,107,.45)}.tag-grid .yellow{background:rgba(255,212,0,.15);color:#fff0a3;border-color:rgba(255,212,0,.45)}.tag-grid .red{background:rgba(255,59,66,.15);color:#ffc0c2;border-color:rgba(255,59,66,.45)}.tag-grid .black{background:#050506;color:#fff;border-color:#777}.modal{position:absolute;inset:0;background:rgba(3,6,10,.62);display:none;place-items:center;z-index:40}.modal.open{display:grid}.assessment{width:min(760px,94vw);background:#0a111a;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}.assessment-head{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line)}.assessment-body{padding:16px;display:grid;grid-template-columns:1.1fr .9fr;gap:16px}.viz{min-height:260px;border:1px solid var(--line);border-radius:10px;background:radial-gradient(circle at 50% 38%,rgba(55,213,255,.12),transparent 40%),#080d13;position:relative;overflow:hidden}.patient-body{position:absolute;left:50%;top:50%;width:230px;height:74px;border-radius:80px 70px 50px 60px;background:#9a6d54;transform:translate(-50%,-30%);box-shadow:inset -20px -10px rgba(0,0,0,.18)}.patient-head{position:absolute;left:50%;top:34%;width:58px;height:58px;border-radius:50%;background:#a97b5d;transform:translate(-190%,-50%)}.chest{position:absolute;left:50%;top:51%;width:112px;height:58px;border:2px solid rgba(255,255,255,.4);border-radius:50%;transform:translate(-35%,-40%);animation:chest 2s infinite ease-in-out}.chest.apnea{animation:none;opacity:.25}.chest.labored{animation:chest .75s infinite ease-in-out;border-color:var(--red)}@keyframes chest{0%,100%{transform:translate(-35%,-40%) scaleY(.82)}50%{transform:translate(-35%,-40%) scaleY(1.13)}}.hand{position:absolute;left:50%;top:66%;width:90px;height:24px;border-radius:30px;background:#9a6d54;transform:translate(50%,-50%)}.finger{position:absolute;right:-10px;top:6px;width:18px;height:12px;border-radius:10px;background:#c28f73}.pulse-dot{position:absolute;left:50%;top:50%;width:20px;height:20px;border-radius:50%;background:var(--cyan);transform:translate(-50%,-50%);box-shadow:0 0 0 0 rgba(55,213,255,.5);animation:pulse 1s infinite}.pulse-dot.absent{display:none}@keyframes pulse{70%{box-shadow:0 0 0 32px rgba(55,213,255,0)}}.cap-nail{position:absolute;left:50%;top:58%;width:34px;height:18px;border-radius:12px;background:#ffcad3;transform:translate(175%,-50%)}.cap-nail.compress{background:#fff}.cap-nail.refill{animation:refill 3s linear forwards}@keyframes refill{0%{background:#fff}45%{background:#fff}100%{background:#ffcad3}}.assessment-copy{display:grid;gap:10px;align-content:start}.finding-box{border:1px solid var(--line);border-radius:8px;padding:10px;background:#0d141d;color:var(--muted);font-size:13px;line-height:1.55}.field{display:grid;gap:5px}.field label{font-size:11px;color:var(--muted);font-weight:800;text-transform:uppercase}.field input,.field select{background:#081019;border:1px solid var(--line);border-radius:8px;color:var(--text);padding:10px}.row{display:flex;gap:8px;flex-wrap:wrap}.toast{position:absolute;left:50%;top:88px;transform:translateX(-50%);background:#061018;border:1px solid var(--cyan);border-radius:8px;padding:10px 14px;font-weight:900;display:none;z-index:80}.dashboard{position:absolute;inset:0;background:#07090d;display:none;z-index:60;overflow:auto;padding:22px}.dashboard.open{display:block}.dash-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:16px 0}.metric{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:14px}.metric .num{font-size:28px;font-weight:900}.metric .lbl{font-size:12px;color:var(--muted)}.table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}.table th,.table td{text-align:left;border-bottom:1px solid var(--line);padding:10px;font-size:13px}.table th{color:var(--muted);font-size:11px;text-transform:uppercase}.overlay-start{position:absolute;inset:0;background:linear-gradient(90deg,rgba(7,9,13,.96),rgba(7,9,13,.65));z-index:90;display:grid;place-items:center;padding:20px}.start-card{max-width:880px;border:1px solid var(--line);background:rgba(16,23,32,.92);border-radius:14px;box-shadow:var(--shadow);padding:24px}.start-card h2{margin:0 0 10px;font-size:34px}.scenario-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0}.scenario-grid button{text-align:left;border:1px solid var(--line);background:#0d141d;color:var(--text);border-radius:10px;padding:12px;font-weight:800}.scenario-grid button:hover{border-color:var(--cyan)}.difficulty{display:flex;gap:8px;margin:12px 0}.difficulty button.active{border-color:var(--cyan);background:rgba(55,213,255,.16)}@media(max-width:900px){.right,.radio{display:none}.assessment-body{grid-template-columns:1fr}.dash-grid{grid-template-columns:repeat(2,1fr)}.scenario-grid{grid-template-columns:1fr}.brand{min-width:auto}.sub{display:none}}
 </style>
 </head>
 <body>
+<div id="app">
+  <div class="top">
+    <div class="brand"><div class="mark">HCT</div><div><h1>Disaster Triage Simulator</h1><div class="sub">First-person START and JumpSTART training</div></div></div>
+    <div class="stats">
+      <span class="pill">Scenario: <strong id="topScenario">-</strong></span>
+      <span class="pill">Time: <strong id="topTime">00:00</strong></span>
+      <span class="pill">Assessed: <strong id="topAssessed">0</strong></span>
+      <span class="pill">Score: <strong id="topScore">0%</strong></span>
+      <button class="btn" id="dashBtn">Analytics</button>
+      <button class="btn primary" id="restartBtn">New Scene</button>
+    </div>
+  </div>
+  <div class="main">
+    <div class="viewport"><canvas id="world" class="world"></canvas><div class="reticle"></div></div>
+    <div class="hud">
+      <div class="card"><div class="scenario-title" id="hudTitle">Mass Casualty Scene</div><div class="small" id="hudText">WASD move, mouse look, Shift sprint, Ctrl crouch, E interact.</div></div>
+      <div class="card small" id="clinicalHint">Approach a victim and press E to assess.</div>
+    </div>
+    <div class="radio card" id="radio"></div>
+    <div class="controls card small"><strong>Responder controls</strong><br>Click scene to capture mouse. W/A/S/D move. Shift sprint. Ctrl crouch. E interact. Esc releases pointer. Victims change condition as time passes.</div>
+    <div class="prompt" id="prompt"><kbd>E</kbd> Interact with patient</div>
+    <div class="right">
+      <div class="panel"><div class="panel-head"><strong>Scene Victims</strong><span class="small" id="victimCount">0 active</span></div><div class="panel-body"><div class="victim-list" id="victimList"></div></div></div>
+      <div class="panel"><div class="panel-head"><strong>Performance</strong><span class="small">live</span></div><div class="panel-body small" id="perfBox"></div></div>
+    </div>
 
-<!-- HOME -->
-<div id="screen-home" class="screen active">
-  <div class="home-bg"></div>
-  <div class="logo-area">
-    <div class="logo-title">⚕ CODE RED</div>
-    <div class="logo-sub">▶ TRIAGE SIMULATOR ◀</div>
-  </div>
-  <div class="home-scene">
-    <div class="ground-stripe-home"></div>
-    <div class="home-cross">➕</div>
-    <div class="home-scene-lbl">— DISASTER ZONE —</div>
-    <div class="home-pat" style="animation-delay:0s">🚶</div>
-    <div class="home-pat" style="animation-delay:-3s">🧍‍♀️</div>
-    <div class="home-pat" style="animation-delay:-6.5s">🚶‍♂️</div>
-  </div>
-  <div class="mode-section">
-    <div class="section-label">▶ select mode</div>
-    <div class="mode-grid">
-      <div class="mode-card" onclick="startMode('practice')"><div class="mc-icon">🩺</div><div class="mc-title">PRACTICE</div><div class="mc-desc">Guided triage with full algorithm hints.</div><span class="mc-badge badge-easy">BEGINNER</span></div>
-      <div class="mode-card" onclick="startMode('quiz')"><div class="mc-icon">📋</div><div class="mc-title">QUIZ</div><div class="mc-desc">10 patients. No hints. Test your knowledge.</div><span class="mc-badge badge-med">INTERMEDIATE</span></div>
-      <div class="mode-card" onclick="startMode('masscas')"><div class="mc-icon">🏥</div><div class="mc-title">MASS CASUALTY</div><div class="mc-desc">15-patient MCI. Triage fast — every second counts.</div><span class="mc-badge badge-hard">ADVANCED</span></div>
-      <div class="mode-card" onclick="startMode('challenge')"><div class="mc-icon">⚡</div><div class="mc-title">SPEED RUN</div><div class="mc-desc">15 seconds per patient. Build streak. Earn bonus XP.</div><span class="mc-badge badge-ex">EXPERT</span></div>
-    </div>
-    <button class="quickref-btn" onclick="toggleRef()">📖 Quick Reference — START &amp; JumpSTART Algorithms</button>
-    <div class="quickref-panel" id="ref-panel">
-      <div class="qr-col">
-        <h4>START (Adults)</h4>
-        <div class="qr-row"><div class="qr-dot" style="background:#2ed573"></div><div><strong style="color:#2ed573">Minor:</strong> Able to walk → secondary triage</div></div>
-        <div class="qr-row"><div class="qr-dot" style="background:#ff4757"></div><div><strong style="color:#ff4757">Immediate:</strong> Not walking; breathing resumes after reposition; RR&gt;30; absent radial pulse or CRT&gt;2s; doesn't obey commands</div></div>
-        <div class="qr-row"><div class="qr-dot" style="background:#ffa502"></div><div><strong style="color:#ffa502">Delayed:</strong> RR≤30; radial pulse present; CRT&lt;2s; obeys commands</div></div>
-        <div class="qr-row"><div class="qr-dot" style="background:#555"></div><div><strong style="color:#aaa">Expectant:</strong> Apneic after airway repositioning</div></div>
-      </div>
-      <div class="qr-col">
-        <h4>JumpSTART (Pediatric)</h4>
-        <div class="qr-row"><div class="qr-dot" style="background:#2ed573"></div><div><strong style="color:#2ed573">Minor:</strong> Ambulatory → secondary triage</div></div>
-        <div class="qr-row"><div class="qr-dot" style="background:#ff4757"></div><div><strong style="color:#ff4757">Immediate:</strong> Breathing after reposition; RR&lt;15 or &gt;45; no palpable pulse; AVPU = inappropriate P or U</div></div>
-        <div class="qr-row"><div class="qr-dot" style="background:#ffa502"></div><div><strong style="color:#ffa502">Delayed:</strong> RR 15–45; palpable pulse; AVPU = A, V, appropriate P</div></div>
-        <div class="qr-row"><div class="qr-dot" style="background:#555"></div><div><strong style="color:#aaa">Expectant:</strong> No pulse; or apnea after 5 rescue breaths</div></div>
-      </div>
-    </div>
+    <div class="menu" id="menu"><div class="menu-title" id="menuTitle">Patient Interaction</div><div class="menu-grid" id="menuGrid"></div></div>
+    <div class="modal" id="modal"><div class="assessment"><div class="assessment-head"><strong id="modalTitle">Assessment</strong><button class="btn ghost" id="closeModal">Close</button></div><div class="assessment-body"><div class="viz" id="viz"><div class="patient-head"></div><div class="patient-body"></div><div id="vizDynamic"></div></div><div class="assessment-copy" id="modalBody"></div></div></div></div>
+    <div class="toast" id="toast"></div>
+
+    <div class="dashboard" id="dashboard"><button class="btn" id="closeDash">Back to Scene</button><h2>Performance Analytics Dashboard</h2><div class="small">Tracks triage accuracy, overtriage, undertriage, missed critical patients, timing, assessment accuracy, and decision speed.</div><div class="dash-grid" id="dashGrid"></div><table class="table"><thead><tr><th>Patient</th><th>Algorithm</th><th>Correct</th><th>Your Tag</th><th>Result</th><th>Rationale</th></tr></thead><tbody id="dashRows"></tbody></table></div>
+
+    <div class="overlay-start" id="startOverlay"><div class="start-card"><h2>Enter the Disaster Scene</h2><p class="small">Spawn as the first responder inside an immersive mass casualty scene. Use adult START and pediatric JumpSTART. Assess breathing, pulse, perfusion, AVPU mental status, and airway decisions before tagging.</p><div class="difficulty"><button class="btn active" data-level="1">Level 1</button><button class="btn" data-level="2">Level 2</button><button class="btn" data-level="3">Level 3</button><button class="btn" data-level="4">Level 4</button></div><div class="scenario-grid" id="scenarioGrid"></div><button class="btn primary" id="beginBtn">Spawn Into Scene</button></div></div>
   </div>
 </div>
-
-<!-- GAME -->
-<div id="screen-game" class="screen">
-  <div class="hud">
-    <span class="hud-logo">⚕ CODE RED</span>
-    <span class="hud-score" id="hud-score">0 PTS</span>
-    <div class="hud-lives" id="hud-lives"></div>
-    <div class="hud-right">
-      <span class="hud-streak" id="hud-streak" style="display:none">🔥 0x</span>
-      <span class="hud-counter" id="hud-counter">1/10</span>
-      <div class="prog-wrap"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
-      <span class="hud-mode" id="hud-mode">QUIZ</span>
-      <button class="quit-btn" onclick="goHome()">✕ QUIT</button>
-    </div>
-  </div>
-  <div class="timer-wrap"><div class="timer-fill" id="timer-fill" style="display:none"></div></div>
-  <div class="game-main">
-    <!-- SCENE -->
-    <div class="scene-vp" id="scene-vp">
-      <div class="scene-ground"></div>
-      <div class="ground-line"></div>
-      <div class="scene-lbl" id="scene-lbl">SCENE</div>
-      <div class="scene-algo" id="scene-algo">START</div>
-      <div class="env-el" style="left:8%" id="env1">🪨</div>
-      <div class="env-el" style="left:82%" id="env2">🧱</div>
-      <div class="amb-el" id="amb">🚑</div>
-      <div class="walk-trail" id="walk-trail">
-        <span class="fp">👣</span>
-        <span class="fp" style="animation-delay:.3s">👣</span>
-        <span class="fp" style="animation-delay:.6s">👣</span>
-      </div>
-      <div class="patient-char" id="p-char">
-        <div class="p-nametag" id="p-nametag">Patient</div>
-        <div class="status-ico" id="status-ico"></div>
-        <span class="p-sprite" id="p-sprite">🧍</span>
-      </div>
-      <div class="breath-wave" id="breath-wave"></div>
-      <div class="vitals-ov">
-        <div class="vov-title">📊 VITALS MONITOR</div>
-        <div id="vov-content"></div>
-      </div>
-    </div>
-    <!-- RIGHT -->
-    <div class="right-panel">
-      <div class="patient-card">
-        <div class="p-header">
-          <div class="p-avatar" id="p-avatar">👤</div>
-          <div>
-            <div class="p-name" id="p-name">—</div>
-            <div class="p-info" id="p-info">—</div>
-          </div>
-        </div>
-        <div class="p-narrative" id="p-narrative">—</div>
-        <div id="p-findings"></div>
-      </div>
-      <div class="tag-section">
-        <div class="tag-lbl">▶ assign triage tag</div>
-        <div class="tag-grid">
-          <button class="tag-btn tb-k" id="btn-black" onclick="answer('black')">⬛<br>EXPECTANT</button>
-          <button class="tag-btn tb-r" id="btn-red" onclick="answer('red')">🔴<br>IMMEDIATE</button>
-          <button class="tag-btn tb-y" id="btn-yellow" onclick="answer('yellow')">🟡<br>DELAYED</button>
-          <button class="tag-btn tb-g" id="btn-green" onclick="answer('green')">🟢<br>MINOR</button>
-        </div>
-      </div>
-      <div class="feedback-wrap">
-        <div class="fb-box" id="fb-box">
-          <div class="fb-title" id="fb-title"></div>
-          <div class="fb-body" id="fb-body"></div>
-        </div>
-      </div>
-      <button class="next-btn" id="next-btn" onclick="nextScenario()">NEXT PATIENT →</button>
-    </div>
-  </div>
-</div>
-
-<!-- RESULTS -->
-<div id="screen-results" class="screen">
-  <div class="res-bg"></div>
-  <div class="res-title">MISSION COMPLETE</div>
-  <div class="res-sub" id="res-sub">QUIZ MODE</div>
-  <div class="res-score" id="res-score">0</div>
-  <div class="res-rank" id="res-rank">RANK: B</div>
-  <div class="xp-wrap">
-    <div class="xp-row"><span>XP EARNED</span><span id="xp-val">0 / 1000</span></div>
-    <div class="xp-bar"><div class="xp-fill" id="xp-fill"></div></div>
-  </div>
-  <div class="tag-breakdown" id="tag-breakdown"></div>
-  <div class="stats-row" id="stats-row"></div>
-  <div class="res-msg" id="res-msg"></div>
-  <div class="res-btns">
-    <button class="btn-pix btn-main" onclick="goHome()">▶ PLAY AGAIN</button>
-  </div>
-</div>
-
-<div class="combo-toast" id="combo-toast"></div>
-
 <script>
-const SC=[
-  {id:1,a:'start',name:'Maria Santos',age:34,g:'F',em:'👩',
-   sc:{env:'RUBBLE SITE',walk:false,lie:false,rr:28,rp:true,envA:'🪨',envB:'🧱'},
-   meta:'Adult female, construction collapse',
-   narr:'Found pinned under collapsed ceiling. Alert, complaining of right leg pain. No obvious airway compromise.',
-   findings:[{t:'Respiratory rate: 28/min',c:'ok'},{t:'Radial pulse: present, regular',c:'ok'},{t:'Capillary refill: 1.5 sec',c:'ok'},{t:'Follows simple commands ✓',c:'ok'}],
-   vitals:{RR:{v:'28/min',s:'ok'},Pulse:{v:'present',s:'ok'},CRT:{v:'1.5s',s:'ok'},Status:{v:'Alert',s:'ok'}},
-   ans:'yellow',exp:'<strong>Delayed (Yellow):</strong> RR ≤30, radial pulse present, CRT &lt;2s, obeys commands. All perfusion and neurological criteria met for Delayed classification.'},
-
-  {id:2,a:'start',name:'Roberto Cruz',age:45,g:'M',em:'👨',
-   sc:{env:'EXPLOSION ZONE',walk:false,lie:false,rr:36,rp:false,envA:'🔥',envB:'💥'},
-   meta:'Adult male, vehicle explosion',
-   narr:'Found near blast zone. Multiple shrapnel wounds. Breathing is rapid and labored.',
-   findings:[{t:'Respiratory rate: 36/min ⚠',c:'crit'},{t:'Radial pulse: ABSENT',c:'crit'},{t:'Capillary refill: 3.2 sec ⚠',c:'crit'},{t:'Responds to verbal commands',c:'ok'}],
-   vitals:{RR:{v:'36/min',s:'crit'},Pulse:{v:'absent',s:'crit'},CRT:{v:'3.2s',s:'crit'}},
-   ans:'red',exp:'<strong>Immediate (Red):</strong> RR &gt;30 alone triggers Immediate. Additionally absent radial pulse and CRT &gt;2s — multiple life-threatening criteria confirmed.'},
-
-  {id:3,a:'start',name:'Liza Reyes',age:28,g:'F',em:'😵',
-   sc:{env:'EARTHQUAKE SITE',walk:false,lie:true,rr:0,rp:false,envA:'🏚️',envB:'🪨'},
-   meta:'Adult female, earthquake survivor',
-   narr:'Found face-down under rubble. No spontaneous breathing. Airway repositioned — remains completely apneic.',
-   findings:[{t:'Not breathing before repositioning',c:'crit'},{t:'Airway repositioned — still apneic ⚠',c:'crit'},{t:'No pulse detected',c:'crit'}],
-   vitals:{RR:{v:'0/min',s:'crit'},Breathing:{v:'APNEA',s:'crit'}},
-   ans:'black',exp:'<strong>Expectant (Black):</strong> No breathing even after airway repositioning. In mass casualty, limited resources cannot be allocated to patients with no survivable prognosis.'},
-
-  {id:4,a:'start',name:'Carlo Mendez',age:52,g:'M',em:'🚶',
-   sc:{env:'RUBBLE SITE',walk:true,lie:false,rr:18,rp:true,envA:'🪨',envB:'🧱'},
-   meta:'Adult male, building collapse',
-   narr:'Found limping toward the perimeter. Minor lacerations on both arms. Ambulatory despite ankle pain.',
-   findings:[{t:'Ambulatory — walking independently ✓',c:'ok'},{t:'RR: 18/min — normal',c:'ok'},{t:'Alert and oriented ×3',c:'ok'}],
-   vitals:{RR:{v:'18/min',s:'ok'},Walk:{v:'YES',s:'ok'},Status:{v:'Alert',s:'ok'}},
-   ans:'green',exp:'<strong>Minor (Green):</strong> First step in START — "Can they walk?" Yes → Green immediately. No further assessment needed at this point.'},
-
-  {id:5,a:'start',name:'Ana Ramos',age:61,g:'F',em:'👩‍🦳',
-   sc:{env:'FIRE SITE',walk:false,lie:false,rr:16,rp:true,airRepos:true,envA:'🔥',envB:'🚒'},
-   meta:'Adult female, gas explosion',
-   narr:'Found unconscious and not breathing. Airway repositioned — spontaneous breathing resumes within seconds.',
-   findings:[{t:'Not breathing initially',c:'crit'},{t:'Airway repositioned ✓',c:'warn'},{t:'Spontaneous breathing resumes',c:'warn'},{t:'Assessment stops here → tag applied',c:'warn'}],
-   vitals:{Breathing:{v:'→ present',s:'warn'},Pulse:{v:'present',s:'ok'}},
-   ans:'red',exp:'<strong>Immediate (Red):</strong> Not breathing → reposition → breathing resumes → IMMEDIATE. Any patient requiring an airway intervention to sustain breathing is tagged Red.'},
-
-  {id:6,a:'start',name:'Eduardo Bautista',age:39,g:'M',em:'👨',
-   sc:{env:'FACTORY SITE',walk:false,lie:false,rr:22,rp:true,envA:'🏭',envB:'⚙️'},
-   meta:'Adult male, factory accident',
-   narr:'Sitting on ground. Glassy, distant stare. Burns on both hands. Does not respond to simple verbal commands.',
-   findings:[{t:'Respiratory rate: 22/min',c:'ok'},{t:'Radial pulse: present',c:'ok'},{t:'Capillary refill: 1.5 sec',c:'ok'},{t:'Does NOT follow commands ⚠',c:'crit'}],
-   vitals:{RR:{v:'22/min',s:'ok'},Pulse:{v:'present',s:'ok'},Status:{v:'CONFUSED',s:'crit'}},
-   ans:'red',exp:'<strong>Immediate (Red):</strong> RR ≤30 and perfusion adequate — but mental status check fails. Inability to follow commands is an Immediate criterion regardless of other parameters.'},
-
-  {id:7,a:'start',name:'Mia Torres',age:24,g:'F',em:'👩',
-   sc:{env:'EARTHQUAKE SITE',walk:false,lie:false,rr:26,rp:true,envA:'🏚️',envB:'🪨'},
-   meta:'Adult female, earthquake',
-   narr:'Seated near debris. Fractured left forearm, visible deformity. Calm, following all instructions. Vital signs stable.',
-   findings:[{t:'Respiratory rate: 26/min',c:'ok'},{t:'Radial pulse: present, strong',c:'ok'},{t:'CRT: 1.8 sec',c:'ok'},{t:'Alert, follows commands ✓',c:'ok'}],
-   vitals:{RR:{v:'26/min',s:'ok'},Pulse:{v:'present',s:'ok'},CRT:{v:'1.8s',s:'ok'},Status:{v:'Alert',s:'ok'}},
-   ans:'yellow',exp:'<strong>Delayed (Yellow):</strong> All four START criteria met — RR ≤30, pulse present, CRT &lt;2s, obeys commands. Stable despite fracture.'},
-
-  {id:8,a:'start',name:'Ramon Garcia',age:47,g:'M',em:'👨',
-   sc:{env:'EXPLOSION ZONE',walk:false,lie:true,rr:26,rp:false,envA:'🔥',envB:'💥'},
-   meta:'Adult male, industrial explosion',
-   narr:'Multiple severe burns on torso. Found prone. Does not respond to commands. Breathing present but weak.',
-   findings:[{t:'Respiratory rate: 26/min',c:'ok'},{t:'Radial pulse: ABSENT ⚠',c:'crit'},{t:'CRT: 3.0 sec ⚠',c:'crit'},{t:'Unresponsive to commands ⚠',c:'crit'}],
-   vitals:{RR:{v:'26/min',s:'ok'},Pulse:{v:'absent',s:'crit'},CRT:{v:'3.0s',s:'crit'},Status:{v:'Unresponsive',s:'crit'}},
-   ans:'red',exp:'<strong>Immediate (Red):</strong> Absent radial pulse (CRT &gt;2s) triggers Immediate. Mental status failure is additional confirmation. Multiple criteria.'},
-
-  {id:9,a:'start',name:'Diane Ocampo',age:33,g:'F',em:'👩',
-   sc:{env:'GAS EXPLOSION',walk:false,lie:false,rr:33,rp:true,envA:'🔥',envB:'🚒'},
-   meta:'Adult female, gas line explosion',
-   narr:'Pinned but talking. Breathing rapidly and shallowly. Alert and cooperative. Complains of chest tightness.',
-   findings:[{t:'Respiratory rate: 33/min ⚠',c:'crit'},{t:'Radial pulse: present',c:'ok'},{t:'CRT: 1 sec',c:'ok'},{t:'Alert, follows commands ✓',c:'ok'}],
-   vitals:{RR:{v:'33/min',s:'crit'},Pulse:{v:'present',s:'ok'},CRT:{v:'1.0s',s:'ok'},Status:{v:'Alert',s:'ok'}},
-   ans:'red',exp:'<strong>Immediate (Red):</strong> RR &gt;30 — assessment stops here and Immediate is assigned. Despite good perfusion and mental status, tachypnea alone triggers classification.'},
-
-  {id:10,a:'start',name:'Jose Villanueva',age:68,g:'M',em:'👴',
-   sc:{env:'RUBBLE SITE',walk:false,lie:false,rr:20,rp:true,envA:'🪨',envB:'🏚️'},
-   meta:'Elderly male, structural collapse',
-   narr:'Seated, confused about location but responds appropriately to commands. Hip deformity noted. Stable breathing.',
-   findings:[{t:'Respiratory rate: 20/min',c:'ok'},{t:'Radial pulse: present',c:'ok'},{t:'CRT: 1.9 sec',c:'ok'},{t:'Follows commands ✓',c:'ok'}],
-   vitals:{RR:{v:'20/min',s:'ok'},Pulse:{v:'present',s:'ok'},CRT:{v:'1.9s',s:'ok'},Status:{v:'Obeys',s:'ok'}},
-   ans:'yellow',exp:'<strong>Delayed (Yellow):</strong> RR ≤30, perfusion intact, obeys commands — all Delayed criteria met. Though elderly, physiological status is currently stable.'},
-
-  {id:11,a:'jumpstart',name:'Nico Aquino',age:7,g:'M',em:'👦',
-   sc:{env:'BUS ACCIDENT',walk:false,lie:false,rr:24,rp:true,envA:'🚌',envB:'🚧'},
-   meta:'Child, 7 yrs, bus accident',
-   narr:'Found seated, crying. Complains of arm pain. Breathing comfortably. Alert and appropriately frightened.',
-   findings:[{t:'RR: 24/min (normal: 15–45) ✓',c:'ok'},{t:'Palpable peripheral pulse ✓',c:'ok'},{t:'AVPU: Alert (A)',c:'ok'}],
-   vitals:{RR:{v:'24/min',s:'ok'},Pulse:{v:'present',s:'ok'},AVPU:{v:'Alert',s:'ok'}},
-   ans:'yellow',exp:'<strong>Delayed (Yellow) — JumpSTART:</strong> RR 15–45, palpable pulse, AVPU = A. All criteria favor Delayed. Normal pediatric physiology; injury not immediately life-threatening.'},
-
-  {id:12,a:'jumpstart',name:'Sofia Dela Cruz',age:5,g:'F',em:'👧',
-   sc:{env:'BUILDING COLLAPSE',walk:false,lie:false,rr:12,rp:true,envA:'🏚️',envB:'🪨'},
-   meta:'Child, 5 yrs, building collapse',
-   narr:'Found under a beam. Breathing is very slow and shallow. Moans when stimulated.',
-   findings:[{t:'RR: 12/min — BELOW 15 ⚠',c:'crit'},{t:'Palpable pulse present',c:'ok'},{t:'AVPU: Verbal (V)',c:'warn'}],
-   vitals:{RR:{v:'12/min',s:'crit'},Pulse:{v:'present',s:'ok'},AVPU:{v:'Verbal',s:'warn'}},
-   ans:'red',exp:'<strong>Immediate (Red) — JumpSTART:</strong> Pediatric RR &lt;15 indicates respiratory depression. This immediately triggers Immediate classification — normal pediatric RR is 15–45.'},
-
-  {id:13,a:'jumpstart',name:'Miguel Torres',age:9,g:'M',em:'😵',
-   sc:{env:'EXPLOSION SITE',walk:false,lie:true,rr:0,rp:false,envA:'💥',envB:'🔥'},
-   meta:'Child, 9 yrs, explosion',
-   narr:'Unresponsive. No breathing. No palpable pulse detected. Algorithm proceeds to pulse check.',
-   findings:[{t:'No spontaneous breathing',c:'crit'},{t:'No palpable pulse ⚠',c:'crit'},{t:'Rescue breaths NOT attempted (no pulse)',c:'warn'}],
-   vitals:{RR:{v:'0/min',s:'crit'},Pulse:{v:'absent',s:'crit'},AVPU:{v:'Unresponsive',s:'crit'}},
-   ans:'black',exp:'<strong>Expectant (Black) — JumpSTART:</strong> No palpable pulse → Expectant. Without circulation, rescue breaths will not result in survival. Resources must be directed to salvageable patients.'},
-
-  {id:14,a:'jumpstart',name:'Bella Navarro',age:6,g:'F',em:'🚶‍♀️',
-   sc:{env:'FLOOD ZONE',walk:true,lie:false,rr:22,rp:true,envA:'💧',envB:'🌊'},
-   meta:'Child, 6 yrs, tsunami survivor',
-   narr:'Running toward responders, crying. Minor cuts and bruises from debris. Demanding to find her mother.',
-   findings:[{t:'Ambulatory — able to walk ✓',c:'ok'},{t:'RR: 22/min',c:'ok'},{t:'Alert and responsive',c:'ok'}],
-   vitals:{RR:{v:'22/min',s:'ok'},Walk:{v:'YES',s:'ok'},AVPU:{v:'Alert',s:'ok'}},
-   ans:'green',exp:'<strong>Minor (Green) — JumpSTART:</strong> Ambulatory child → Minor. First step in JumpSTART is identical to START: if the child walks, classify Green and direct to secondary triage.'},
-
-  {id:15,a:'jumpstart',name:'James Villanueva',age:8,g:'M',em:'👦',
-   sc:{env:'BUILDING COLLAPSE',walk:false,lie:true,rr:0,rp:true,rescue:true,envA:'🏚️',envB:'🪨'},
-   meta:'Child, 8 yrs, structural collapse',
-   narr:'Unconscious, not breathing. Pulse palpable. Given 5 rescue breaths — begins breathing spontaneously afterward.',
-   findings:[{t:'Not breathing initially',c:'crit'},{t:'Palpable pulse → 5 rescue breaths given',c:'warn'},{t:'Spontaneous breathing resumes after breaths ✓',c:'warn'}],
-   vitals:{RR:{v:'→ present',s:'warn'},Pulse:{v:'present',s:'ok'},Rescue:{v:'5 given',s:'warn'}},
-   ans:'red',exp:'<strong>Immediate (Red) — JumpSTART:</strong> No breathing → pulse present → 5 rescue breaths → breathing resumes → Immediate. This child required an intervention; immediate care is needed.'},
-
-  {id:16,a:'jumpstart',name:'Camille Reyes',age:4,g:'F',em:'👧',
-   sc:{env:'EXPLOSION SITE',walk:false,lie:false,rr:48,rp:true,envA:'💥',envB:'🔥'},
-   meta:'Child, 4 yrs, explosion aftermath',
-   narr:'Found lying down. Breathing extremely rapid. Shows rigid posturing when painful stimulus applied.',
-   findings:[{t:'RR: 48/min — ABOVE 45 ⚠',c:'crit'},{t:'Palpable pulse present',c:'ok'},{t:'AVPU: Inappropriate P (posturing) ⚠',c:'crit'}],
-   vitals:{RR:{v:'48/min',s:'crit'},Pulse:{v:'present',s:'ok'},AVPU:{v:'P-posturing',s:'crit'}},
-   ans:'red',exp:'<strong>Immediate (Red) — JumpSTART:</strong> RR &gt;45 triggers Immediate. Additionally AVPU = inappropriate P (decerebrate posturing) indicates severe neurological compromise. Two criteria.'},
-
-  {id:17,a:'jumpstart',name:'Kevin Santos',age:10,g:'M',em:'👦',
-   sc:{env:'BUS ACCIDENT',walk:false,lie:false,rr:30,rp:true,envA:'🚌',envB:'🚧'},
-   meta:'Child, 10 yrs, bus accident',
-   narr:'Seated, arm deformity visible. Calm but unable to walk due to right leg trauma. Responding normally to stimuli.',
-   findings:[{t:'RR: 30/min (within 15–45) ✓',c:'ok'},{t:'Palpable pulse ✓',c:'ok'},{t:'AVPU: Alert (A)',c:'ok'}],
-   vitals:{RR:{v:'30/min',s:'ok'},Pulse:{v:'present',s:'ok'},AVPU:{v:'Alert',s:'ok'}},
-   ans:'yellow',exp:'<strong>Delayed (Yellow) — JumpSTART:</strong> RR 15–45, palpable pulse, AVPU = A. Stable pediatric patient. Orthopedic injury alone does not warrant Immediate.'},
-
-  {id:18,a:'jumpstart',name:'Alicia Morales',age:3,g:'F',em:'👶',
-   sc:{env:'FLOOD RESCUE',walk:false,lie:true,rr:0,rp:true,rescue:false,rescued:true,envA:'💧',envB:'🌊'},
-   meta:'Toddler, 3 yrs, flood rescue',
-   narr:'Pulled from water. Unresponsive. Not breathing after airway repositioning. Pulse palpable. 5 rescue breaths given — still apneic.',
-   findings:[{t:'Not breathing after airway reposition',c:'crit'},{t:'Palpable pulse → 5 rescue breaths given',c:'warn'},{t:'Still apneic after rescue breaths ⚠',c:'crit'}],
-   vitals:{RR:{v:'APNEA',s:'crit'},Pulse:{v:'present',s:'ok'},Rescue:{v:'failed',s:'crit'}},
-   ans:'black',exp:'<strong>Expectant (Black) — JumpSTART:</strong> Pulse present → 5 rescue breaths → still apneic → Expectant. This is unique to JumpSTART: rescue breaths are attempted once; persistent apnea = Expectant.'},
-
-  {id:19,a:'start',name:'Patricia Lim',age:41,g:'F',em:'🚶‍♀️',
-   sc:{env:'FACTORY SITE',walk:true,lie:false,rr:16,rp:true,envA:'🏭',envB:'⚙️'},
-   meta:'Adult female, factory explosion',
-   narr:'Evacuating independently. Complaining of ringing ears and minor hand lacerations. Vital signs stable.',
-   findings:[{t:'Ambulatory — walking rapidly ✓',c:'ok'},{t:'Oriented, communicating normally',c:'ok'}],
-   vitals:{Walk:{v:'YES',s:'ok'},Status:{v:'Alert',s:'ok'}},
-   ans:'green',exp:'<strong>Minor (Green) — START:</strong> Walking → Green. Immediately assign and direct to secondary triage. Do not delay by performing further assessment on ambulatory patients.'},
-
-  {id:20,a:'start',name:'Bernard Santos',age:55,g:'M',em:'👨',
-   sc:{env:'BUILDING COLLAPSE',walk:false,lie:false,rr:29,rp:true,envA:'🏚️',envB:'🪨'},
-   meta:'Adult male, building collapse',
-   narr:'Pinned at the waist. Alert, answering questions. Minor bleeding from head laceration. Borderline-normal respiratory rate.',
-   findings:[{t:'Respiratory rate: 29/min',c:'warn'},{t:'Radial pulse: present',c:'ok'},{t:'CRT: 1.7 sec',c:'ok'},{t:'Follows commands accurately ✓',c:'ok'}],
-   vitals:{RR:{v:'29/min',s:'warn'},Pulse:{v:'present',s:'ok'},CRT:{v:'1.7s',s:'ok'},Status:{v:'Alert',s:'ok'}},
-   ans:'yellow',exp:'<strong>Delayed (Yellow):</strong> RR of 29 is just below 30 — important to count carefully! All four criteria satisfied: RR ≤30, pulse present, CRT &lt;2s, obeys commands.'},
-
-  {id:21,a:'jumpstart',name:'Diego Fernandez',age:11,g:'M',em:'👦',
-   sc:{env:'WAREHOUSE FIRE',walk:false,lie:false,rr:20,rp:false,envA:'🔥',envB:'🏭'},
-   meta:'Child, 11 yrs, warehouse fire',
-   narr:'Found near exit. Soot on face. Not walking due to calf injury. Peripheral pulse cannot be palpated.',
-   findings:[{t:'RR: 20/min (normal range) ✓',c:'ok'},{t:'Palpable pulse: ABSENT ⚠',c:'crit'},{t:'AVPU: Verbal (V)',c:'warn'}],
-   vitals:{RR:{v:'20/min',s:'ok'},Pulse:{v:'absent',s:'crit'},AVPU:{v:'Verbal',s:'warn'}},
-   ans:'red',exp:'<strong>Immediate (Red) — JumpSTART:</strong> No palpable pulse → Immediate. The pulse check comes after RR assessment and directly triggers Immediate classification in JumpSTART.'},
-
-  {id:22,a:'jumpstart',name:'Sarah Kim',age:6,g:'F',em:'👧',
-   sc:{env:'BUS ACCIDENT',walk:false,lie:false,rr:18,rp:true,envA:'🚌',envB:'🚧'},
-   meta:'Child, 6 yrs, school bus accident',
-   narr:'Seated in debris. Crying softly. Withdraws appropriately from painful stimuli. Breathing normal for age.',
-   findings:[{t:'RR: 18/min (normal) ✓',c:'ok'},{t:'Palpable pulse present ✓',c:'ok'},{t:'AVPU: Appropriate P (withdrawal) ✓',c:'ok'}],
-   vitals:{RR:{v:'18/min',s:'ok'},Pulse:{v:'present',s:'ok'},AVPU:{v:'P-appropriate',s:'ok'}},
-   ans:'yellow',exp:'<strong>Delayed (Yellow) — JumpSTART:</strong> AVPU = appropriate P (purposeful withdrawal from pain) is Delayed. Do not confuse with inappropriate P (posturing/decerebrate) which triggers Immediate.'},
-
-  {id:23,a:'start',name:'Henry Tan',age:72,g:'M',em:'🚶',
-   sc:{env:'EARTHQUAKE SITE',walk:true,lie:false,rr:17,rp:true,envA:'🏚️',envB:'🪨'},
-   meta:'Elderly male, earthquake',
-   narr:'Walking slowly toward assembly point. Mild confusion about surroundings. Has a head wound but self-ambulatory.',
-   findings:[{t:'Ambulatory — walking ✓',c:'ok'},{t:'RR: 17/min',c:'ok'},{t:'Confused — oriented to person only',c:'warn'}],
-   vitals:{Walk:{v:'YES',s:'ok'},RR:{v:'17/min',s:'ok'}},
-   ans:'green',exp:'<strong>Minor (Green) — START:</strong> Able to walk → Minor. The first step of START is the ambulation check. A walking patient is tagged Green regardless of mental status or complaints. Secondary triage will reassess.'},
-
-  {id:24,a:'jumpstart',name:'Luna Pascual',age:7,g:'F',em:'👧',
-   sc:{env:'GAS EXPLOSION',walk:false,lie:false,rr:18,rp:true,envA:'💥',envB:'🔥'},
-   meta:'Child, 7 yrs, gas explosion',
-   narr:'Found seated. Staring blankly. Unresponsive to verbal commands. Only responds to pain with posturing movements.',
-   findings:[{t:'RR: 18/min (normal range)',c:'ok'},{t:'Palpable pulse present',c:'ok'},{t:'AVPU: Inappropriate P ⚠',c:'crit'},{t:'Rigid posturing (decerebrate) noted',c:'crit'}],
-   vitals:{RR:{v:'18/min',s:'ok'},Pulse:{v:'present',s:'ok'},AVPU:{v:'P-posturing',s:'crit'}},
-   ans:'red',exp:'<strong>Immediate (Red) — JumpSTART:</strong> RR and pulse normal but AVPU = inappropriate P (posturing) indicates severe brain injury → Immediate. Never ignore AVPU even when other vitals look stable.'},
-
-  {id:25,a:'start',name:'Renata Cruz',age:36,g:'F',em:'👩',
-   sc:{env:'FLOOD ZONE',walk:false,lie:false,rr:24,rp:true,envA:'💧',envB:'🌊'},
-   meta:'Adult female, flash flood',
-   narr:'Found clinging to debris, unable to move due to swollen ankle. Breathing steadily. Alert and answering all questions.',
-   findings:[{t:'Respiratory rate: 24/min',c:'ok'},{t:'Radial pulse: present, strong',c:'ok'},{t:'CRT: 1.2 sec',c:'ok'},{t:'Follows commands, oriented ×3 ✓',c:'ok'}],
-   vitals:{RR:{v:'24/min',s:'ok'},Pulse:{v:'present',s:'ok'},CRT:{v:'1.2s',s:'ok'},Status:{v:'Alert',s:'ok'}},
-   ans:'yellow',exp:'<strong>Delayed (Yellow):</strong> Textbook Delayed presentation — all four START criteria satisfied. Ankle injury is serious but will not deteriorate rapidly. Patient is physiologically stable.'},
+const canvas=document.getElementById('world'),ctx=canvas.getContext('2d');
+const scenarios=[
+ {id:'mvc',name:'Mass casualty vehicular collision',weather:'clear',hazards:['wreckage','fuel','traffic'],radio:['Dispatch: multi-vehicle collision, unknown victims.','EMS: establish triage corridor east of scene.']},
+ {id:'quake',name:'Earthquake structural collapse',weather:'dust',hazards:['debris','aftershock','unstable wall'],radio:['Command: aftershock risk remains high.','Rescue: trapped victims reported near rubble line.']},
+ {id:'fire',name:'Building fire evacuation',weather:'smoke',hazards:['fire','smoke','glass'],radio:['Fire: interior team withdrawing.','EMS: smoke inhalation patients moving to cold zone.']},
+ {id:'flood',name:'Flood disaster',weather:'rain',hazards:['water','debris','electrical'],radio:['Rescue: water rising near shelter entrance.','EMS: hypothermia checks required.']},
+ {id:'industrial',name:'Industrial explosion',weather:'sparks',hazards:['fire','metal','blast'],radio:['Plant safety: secondary explosion possible.','Command: avoid the tank farm side.']},
+ {id:'chemical',name:'Chemical exposure incident',weather:'haze',hazards:['vapor','PPE','decon'],radio:['Hazmat: decon corridor active.','EMS: do not move contaminated patients into treatment area.']},
+ {id:'violence',name:'Active violence event',weather:'night',hazards:['law enforcement','noise','cover'],radio:['Police: warm zone only with escort.','EMS: rapid triage, rapid extraction.']},
+ {id:'hospital',name:'Hospital mass casualty overflow',weather:'indoor',hazards:['crowding','equipment','noise'],radio:['ED charge: ambulance bay is full.','Command: use lobby as secondary triage.']},
+ {id:'airport',name:'Airport disaster',weather:'wind',hazards:['fuel','runway','debris'],radio:['Airport ops: runway closed.','EMS: aircraft fuselage unstable.']},
+ {id:'typhoon',name:'Typhoon evacuation center surge',weather:'storm',hazards:['crowd','rain','power loss'],radio:['Shelter: generator power intermittent.','EMS: queue ambulatory patients by gym entrance.']}
 ];
-
-// ── STATE ──
-let mode,queue,cur,score,streak,maxStreak,lives,answered,timerIv,breathIv;
-let cTag={black:0,red:0,yellow:0,green:0},sTag={black:0,red:0,yellow:0,green:0},sessStart;
-
-function shuffle(a){return[...a].sort(()=>Math.random()-.5);}
-
-function startMode(m){
-  mode=m;score=0;streak=0;maxStreak=0;lives=3;cur=0;answered=false;
-  cTag={black:0,red:0,yellow:0,green:0};sTag={black:0,red:0,yellow:0,green:0};
-  sessStart=Date.now();
-  if(m==='masscas') queue=shuffle(SC).slice(0,15);
-  else if(m==='challenge') queue=shuffle(SC);
-  else if(m==='quiz') queue=shuffle(SC).slice(0,10);
-  else queue=shuffle(SC).slice(0,8);
-  document.getElementById('hud-mode').textContent=m==='masscas'?'MASS CAS':m.toUpperCase();
-  updateLives();
-  showScreen('game');
-  renderSc();
-}
-
-function showScreen(id){
-  document.querySelectorAll('.screen').forEach(s=>{s.classList.remove('active');});
-  document.getElementById('screen-'+id).classList.add('active');
-}
-
-function renderSc(){
-  if(cur>=queue.length){showResults();return;}
-  answered=false;
-  clearTimer();clearBreath();
-  const s=queue[cur];
-  sTag[s.ans]++;
-  // HUD
-  document.getElementById('hud-score').textContent=score+' PTS';
-  document.getElementById('hud-counter').textContent=(cur+1)+'/'+queue.length;
-  document.getElementById('prog-fill').style.width=Math.round(cur/queue.length*100)+'%';
-  const stEl=document.getElementById('hud-streak');
-  if(streak>=2){stEl.style.display='inline-block';stEl.textContent='🔥 '+streak+'x';}else stEl.style.display='none';
-  // scene
-  const lbl=document.getElementById('scene-lbl');
-  lbl.textContent='📍 '+s.sc.env;
-  const aEl=document.getElementById('scene-algo');
-  aEl.textContent=s.a==='start'?'START (ADULT)':'JUMPSTART (PED)';
-  aEl.className='scene-algo '+(s.a==='start'?'algo-start':'algo-jump');
-  document.getElementById('env1').textContent=s.sc.envA||'🪨';
-  document.getElementById('env2').textContent=s.sc.envB||'🧱';
-  buildPatient(s);
-  buildVitals(s);
-  // right panel
-  document.getElementById('p-avatar').textContent=s.em;
-  document.getElementById('p-name').textContent=s.name;
-  document.getElementById('p-info').textContent='Age '+s.age+' · '+s.meta;
-  document.getElementById('p-narrative').textContent=s.narr;
-  document.getElementById('p-findings').innerHTML=s.findings.map(f=>`<div class="finding ${f.c}">${f.t}</div>`).join('');
-  // reset
-  document.getElementById('fb-box').style.display='none';
-  document.getElementById('next-btn').style.display='none';
-  ['btn-black','btn-red','btn-yellow','btn-green'].forEach(id=>{
-    const b=document.getElementById(id);b.disabled=false;b.style.opacity='1';
-  });
-  // timer
-  const tf=document.getElementById('timer-fill');
-  if(mode==='challenge'){tf.style.display='block';tf.style.width='100%';tf.style.background='var(--teal)';startTimer();}
-  else tf.style.display='none';
-}
-
-function buildPatient(s){
-  const sp=document.getElementById('p-sprite');
-  const nt=document.getElementById('p-nametag');
-  const si=document.getElementById('status-ico');
-  const wt=document.getElementById('walk-trail');
-  nt.textContent=s.name;
-  sp.className='p-sprite';
-  si.textContent='';
-  wt.classList.remove('active');
-  sp.style.transition='transform .4s ease-in-out';
-  sp.style.transform='';
-  if(s.sc.lie){
-    sp.textContent='😵';sp.classList.add('lying');si.textContent='⚠️';
-  } else if(s.sc.walk){
-    sp.textContent=s.em;
-    wt.classList.add('active');
-    si.textContent='🚶';
-    setTimeout(()=>wt.classList.remove('active'),3500);
-    // bob animation
-    sp.style.transition='transform .4s ease-in-out';
-    let tog=false;
-    breathIv=setInterval(()=>{
-      sp.style.transform=tog?'translateX(-50%) rotate(-3deg)':'translateX(-50%) rotate(3deg)';
-      tog=!tog;
-    },400);
-    sp.style.left='30%';
-    return;
-  } else {
-    sp.textContent=s.em;
-    si.textContent=s.sc.rr===0?'⚠️':s.sc.rr>30?'😰':'😟';
-  }
-  // breathing animation
-  clearBreath();
-  if(s.sc.rr>0&&!s.sc.lie){
-    const cycle=60/s.sc.rr;
-    let ex=false;
-    breathIv=setInterval(()=>{
-      sp.style.transform=ex?'scaleY(0.96)':'scaleY(1.07)';
-      ex=!ex;
-    },cycle/2*1000);
-  }
-  buildBreathWave(s.sc.rr);
-}
-
-function buildBreathWave(rr){
-  const bw=document.getElementById('breath-wave');
-  bw.innerHTML='';
-  if(rr===0){bw.innerHTML='<span class="apnea-lbl">APNEA</span>';return;}
-  const n=18,cycle=60/rr;
-  for(let i=0;i<n;i++){
-    const b=document.createElement('div');
-    b.className='bw-bar';
-    b.style.height=(6+Math.sin(i/n*Math.PI)*14)+'px';
-    b.style.animationDuration=(cycle/2)+'s';
-    b.style.animationDelay=(i/n*cycle/2)+'s';
-    b.style.background=rr>30?'var(--red)':rr<15?'var(--yellow)':'var(--teal)';
-    bw.appendChild(b);
-  }
-  const l=document.createElement('span');
-  l.style.cssText='font-family:var(--font-pixel);font-size:6px;color:var(--muted);margin-left:5px;';
-  l.textContent='RR '+rr;
-  bw.appendChild(l);
-}
-
-function buildVitals(s){
-  const vc=document.getElementById('vov-content');
-  vc.innerHTML='';
-  Object.entries(s.vitals).forEach(([k,v])=>{
-    const r=document.createElement('div');r.className='vov-row';
-    r.innerHTML=`<span class="vov-k">${k}</span><span class="vov-v vc-${v.s}">${v.v}</span>`;
-    vc.appendChild(r);
-  });
-}
-
-function clearBreath(){if(breathIv){clearInterval(breathIv);breathIv=null;}}
-
-function answer(tag){
-  if(answered)return;
-  answered=true;clearTimer();
-  const s=queue[cur];
-  const ok=tag===s.ans;
-  const to=tag==='__timeout__';
-  const labels={black:'⬛ Expectant (Black)',red:'🔴 Immediate (Red)',yellow:'🟡 Delayed (Yellow)',green:'🟢 Minor (Green)'};
-  if(!to){
-    if(ok){cTag[s.ans]++;streak++;if(streak>maxStreak)maxStreak=streak;const bonus=mode==='challenge'?Math.min(streak-1,5)*5:0;score+=(mode==='masscas'?15:mode==='challenge'?20+bonus:10);spawnParticles(true);if(streak>=3)showCombo(streak,bonus);}
-    else{streak=0;if(mode!=='practice'){lives=Math.max(0,lives-1);}updateLives();spawnParticles(false);}
-  } else {streak=0;lives=Math.max(0,lives-1);updateLives();}
-  document.getElementById('hud-score').textContent=score+' PTS';
-  const stEl=document.getElementById('hud-streak');
-  if(streak>=2){stEl.style.display='inline-block';stEl.textContent='🔥 '+streak+'x';}else stEl.style.display='none';
-  ['btn-black','btn-red','btn-yellow','btn-green'].forEach(id=>{
-    const b=document.getElementById(id);b.disabled=true;b.style.opacity=id==='btn-'+s.ans?'1':'0.28';
-  });
-  const fb=document.getElementById('fb-box');fb.style.display='block';
-  let type=to?'timeout':ok?'correct':'wrong';
-  fb.className='fb-box '+type;
-  document.getElementById('fb-title').className='fb-title '+type;
-  document.getElementById('fb-title').textContent=to?'⏱ TIME\'S UP!':ok?'✅ CORRECT! +'+score+' PTS':'❌ INCORRECT';
-  document.getElementById('fb-body').innerHTML=to?`Correct: <strong>${labels[s.ans]}</strong><br><br>${s.exp}`:ok?s.exp:`You chose: <strong>${labels[tag]}</strong><br>Correct: <strong>${labels[s.ans]}</strong><br><br>${s.exp}`;
-  document.getElementById('next-btn').style.display='block';
-  document.getElementById('next-btn').textContent=cur<queue.length-1?'NEXT PATIENT →':'VIEW RESULTS →';
-}
-
-function nextScenario(){cur++;renderSc();}
-
-function startTimer(){
-  const tf=document.getElementById('timer-fill'),tot=15000,st=Date.now();
-  timerIv=setInterval(()=>{
-    const el=Date.now()-st,pct=Math.max(0,100-(el/tot*100));
-    tf.style.width=pct+'%';
-    tf.style.background=pct>50?'var(--teal)':pct>25?'var(--yellow)':'var(--red)';
-    if(el>=tot&&!answered){clearInterval(timerIv);answer('__timeout__');}
-  },100);
-}
-function clearTimer(){if(timerIv){clearInterval(timerIv);timerIv=null;}}
-
-function updateLives(){
-  const el=document.getElementById('hud-lives');el.innerHTML='';
-  if(mode==='practice')return;
-  for(let i=0;i<3;i++){const h=document.createElement('span');h.className='heart'+(i>=lives?' empty':'');h.textContent='❤️';el.appendChild(h);}
-}
-
-function showCombo(s,b){
-  const el=document.getElementById('combo-toast');
-  el.textContent='🔥 '+s+'x STREAK!'+(b?' +'+b+' BONUS!':'');
-  el.style.display='block';
-  setTimeout(()=>el.style.display='none',2200);
-}
-
-function spawnParticles(ok){
-  const e=ok?['✅','⭐','💫','✨','🎯']:['❌','💔','😬','💥'];
-  for(let i=0;i<6;i++){
-    const p=document.createElement('div');
-    p.className='particle';p.textContent=e[Math.floor(Math.random()*e.length)];
-    p.style.left=(25+Math.random()*50)+'%';p.style.top=(35+Math.random()*25)+'%';
-    p.style.animationDelay=(Math.random()*.4)+'s';
-    document.body.appendChild(p);setTimeout(()=>p.remove(),1300);
-  }
-}
-
-function showResults(){
-  clearTimer();clearBreath();
-  showScreen('results');
-  const total=queue.length,correct=Object.values(cTag).reduce((a,b)=>a+b,0),pct=Math.round(correct/total*100),elapsed=Math.round((Date.now()-sessStart)/1000);
-  document.getElementById('res-sub').textContent=(mode==='masscas'?'MASS CASUALTY':mode.toUpperCase())+' MODE';
-  document.getElementById('res-score').textContent=score;
-  let rank,rc;
-  if(pct===100){rank='★ RANK: S';rc='rank-s';}
-  else if(pct>=85){rank='RANK: A';rc='rank-a';}
-  else if(pct>=70){rank='RANK: B';rc='rank-b';}
-  else if(pct>=55){rank='RANK: C';rc='rank-c';}
-  else{rank='RANK: D';rc='rank-d';}
-  const rEl=document.getElementById('res-rank');rEl.textContent=rank;rEl.className='res-rank '+rc;
-  document.getElementById('tag-breakdown').innerHTML=
-    `<div class="tbc tbc-k"><div class="tbc-num">${cTag.black}/${sTag.black||'—'}</div><div class="tbc-lbl">Expectant</div></div>`+
-    `<div class="tbc tbc-r"><div class="tbc-num">${cTag.red}/${sTag.red||'—'}</div><div class="tbc-lbl">Immediate</div></div>`+
-    `<div class="tbc tbc-y"><div class="tbc-num">${cTag.yellow}/${sTag.yellow||'—'}</div><div class="tbc-lbl">Delayed</div></div>`+
-    `<div class="tbc tbc-g"><div class="tbc-num">${cTag.green}/${sTag.green||'—'}</div><div class="tbc-lbl">Minor</div></div>`;
-  document.getElementById('stats-row').innerHTML=
-    `<div class="stat-item"><div class="stat-num">${correct}/${total}</div><div class="stat-lbl">Correct</div></div>`+
-    `<div class="stat-item"><div class="stat-num">${pct}%</div><div class="stat-lbl">Accuracy</div></div>`+
-    `<div class="stat-item"><div class="stat-num">${maxStreak}x</div><div class="stat-lbl">Best Streak</div></div>`+
-    `<div class="stat-item"><div class="stat-num">${elapsed}s</div><div class="stat-lbl">Time</div></div>`;
-  const msgs=['Keep practicing — review the algorithms. Focus on the decision tree step by step.','Good effort. Study borderline cases: RR=30 in START, AVPU P appropriate vs inappropriate in JumpSTART.','Solid triage knowledge. Review any missed edge cases and you\'ll reach expert level.','Excellent performance. You demonstrate strong triage judgment under pressure.','Perfect score. Outstanding clinical decision-making!'];
-  document.getElementById('res-msg').textContent=msgs[pct<50?0:pct<65?1:pct<80?2:pct<100?3:4];
-  const xpMax=queue.length*20;
-  document.getElementById('xp-val').textContent=score+' / '+xpMax;
-  setTimeout(()=>document.getElementById('xp-fill').style.width=Math.min(100,score/xpMax*100)+'%',400);
-}
-
-function goHome(){clearTimer();clearBreath();showScreen('home');}
-function toggleRef(){document.getElementById('ref-panel').classList.toggle('open');}
+const victimNames=['Ana Cruz','Ben Santos','Carlo Lim','Dina Reyes','Eli Navarro','Fatima Garcia','Gio Tan','Hannah Kim','Ivan Torres','Jessa Ramos','Ken Bautista','Lia Mendoza','Marco Chen','Nina Lopez','Omar Diaz','Pia Flores'];
+const state={level:1,scenario:scenarios[0],start:0,player:{x:0,z:0,yaw:0,pitch:0,eye:1.72,crouch:false},keys:{},victims:[],selected:null,near:null,logs:[],assessments:0,correct:0,over:0,under:0,missedCritical:0,firstPatientAt:null,assessmentChecks:0,assessmentCorrect:0,radioIndex:0,radioLines:[]};
+const tags={green:1,yellow:2,red:3,black:0};
+function rnd(a,b){return a+Math.random()*(b-a)}function clamp(v,a,b){return Math.max(a,Math.min(b,v))}function dist(a,b){return Math.hypot(a.x-b.x,a.z-b.z)}function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function resize(){canvas.width=innerWidth*devicePixelRatio;canvas.height=(innerHeight-64)*devicePixelRatio;canvas.style.width=innerWidth+'px';canvas.style.height=(innerHeight-64)+'px';ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0)}addEventListener('resize',resize);resize();
+function makeVictim(i,level){const pediatric=Math.random()<.28;const walking=Math.random()<.22;const trauma=Math.random()<.68;let rr=walking?rnd(16,24):[0,rnd(8,13),rnd(16,28),rnd(32,48)][Math.floor(Math.random()*4)];let radial=Math.random()>.28,cap=radial?rnd(1,2.1):rnd(2.5,5),avpu=walking?'A':['A','V','P','U'][Math.floor(Math.random()*4)];let pulse=rr===0&&Math.random()<.45?0:Math.round(rnd(48,138));let posture=walking?'walking':Math.random()<.34?'sitting':Math.random()<.28?'trapped':'lying';const severity=walking?1:(rr===0||!radial||cap>2||avpu==='U'||rr>30?3:2);return{ id:'v'+i,name:victimNames[i%victimNames.length],age:pediatric?Math.floor(rnd(3,12)):Math.floor(rnd(18,78)),pediatric,trauma,scenarioType:trauma?'trauma':'medical',x:rnd(-24,24),z:rnd(10,54),posture,walking,confused:avpu!=='A',calling:Math.random()<.45,rr:Math.round(rr),baselineRr:Math.round(rr),pulse,radial,cap,avpu,breathing:rr>0,airwayOpened:false,rescueBreaths:false,condition:severity,dead:false,tag:null,assessed:{},created:Date.now(),lastChange:Date.now()+rnd(8000,22000),moveDir:rnd(-Math.PI,Math.PI),voice:Math.random()<.5?'Help me!':'I cannot move',injury:trauma?'suspected trauma/spinal precaution':'medical illness/no trauma indicator'} }
+function correctTag(v){if(v.pediatric)return jumpStart(v);return startAdult(v)}
+function startAdult(v){if(v.walking)return'green';if(!v.breathing){return v.airwayOpened&&v.breathing?'red':'black'}if(v.rr>30)return'red';if(!v.radial||v.cap>2)return'red';if(v.avpu!=='A')return'red';return'yellow'}
+function jumpStart(v){if(v.walking)return'green';if(!v.breathing){if(!v.pulse)return'black';if(v.rescueBreaths&&v.breathing)return'red';return v.rescueBreaths?'black':'black'}if(v.rr<15||v.rr>45)return'red';if(!v.pulse)return'red';if(v.avpu==='U'||v.avpu==='P-bad')return'red';return'yellow'}
+function rationale(v,tag){if(v.pediatric){if(v.walking)return'JumpSTART: ambulatory child is Minor/Green and moves to secondary triage.';if(!v.breathing&&!v.pulse)return'JumpSTART: apneic child with no palpable pulse is Expectant/Black.';if(!v.breathing&&v.pulse&&!v.rescueBreaths)return'JumpSTART: apneic child with pulse requires 5 rescue breaths; persistent apnea is Black, resumed breathing is Red.';if(v.rr<15||v.rr>45)return'JumpSTART: respiratory rate outside 15-45 is Immediate/Red.';if(!v.pulse)return'JumpSTART: absent palpable pulse is Immediate/Red.';if(v.avpu==='U'||v.avpu==='P-bad')return'JumpSTART: unresponsive or inappropriate pain response is Immediate/Red.';return'JumpSTART: RR 15-45, palpable pulse, and A/V/appropriate P mental status is Delayed/Yellow.'}if(v.walking)return'START: able to walk means Minor/Green; direct to secondary triage.';if(!v.breathing)return'START: no spontaneous breathing after airway positioning is Expectant/Black.';if(v.rr>30)return'START: respiratory rate greater than 30 is Immediate/Red.';if(!v.radial||v.cap>2)return'START: absent radial pulse or capillary refill over 2 seconds is Immediate/Red.';if(v.avpu!=='A')return'START: does not obey commands/altered mental status is Immediate/Red.';return'START: nonambulatory but RR <=30, radial pulse present, capillary refill <2 sec, obeys commands is Delayed/Yellow.'}
+function initScene(){state.start=Date.now();state.victims=[];state.logs=[];state.assessments=0;state.correct=0;state.over=0;state.under=0;state.missedCritical=0;state.firstPatientAt=null;state.assessmentChecks=0;state.assessmentCorrect=0;state.radioLines=[];state.player={x:0,z:0,yaw:0,pitch:0,eye:1.72,crouch:false};const count=[5,8,12,16][state.level-1];for(let i=0;i<count;i++)state.victims.push(makeVictim(i,state.level));document.getElementById('topScenario').textContent=state.scenario.name;document.getElementById('hudTitle').textContent=state.scenario.name;pushRadio('You are first responder. Begin primary triage.');state.scenario.radio.forEach((r,i)=>setTimeout(()=>pushRadio(r),1200+i*1600));updatePanels()}
+function deteriorate(v){if(v.tag||v.dead)return;if(Date.now()<v.lastChange)return;v.lastChange=Date.now()+rnd(12000,28000)/state.level;const roll=Math.random();if(v.condition>=3&&roll<.55){if(v.rr>0)v.rr=Math.max(0,v.rr+Math.round(rnd(-5,10)));if(Math.random()<.35)v.radial=false;if(Math.random()<.35)v.cap+=rnd(.6,1.8);if(Math.random()<.3)v.avpu=v.avpu==='A'?'V':v.avpu==='V'?'P':'U';if(Math.random()<.18){v.breathing=false;v.rr=0}if(v.rr===0&&Math.random()<.25){v.pulse=0;v.dead=true}}else if(roll<.45){v.walking=false;v.confused=true;v.avpu=v.avpu==='A'?'V':v.avpu}else{v.moveDir+=rnd(-.8,.8)} }
+function update(dt){const p=state.player;const speed=(state.keys.ShiftLeft||state.keys.ShiftRight)?7:state.keys.ControlLeft?2.1:4;state.player.crouch=!!state.keys.ControlLeft;p.eye=state.player.crouch?1.05:1.72;let f=0,s=0;if(state.keys.KeyW)f++;if(state.keys.KeyS)f--;if(state.keys.KeyA)s--;if(state.keys.KeyD)s++;if(f||s){const len=Math.hypot(f,s);f/=len;s/=len;p.x+=(Math.sin(p.yaw)*f+Math.cos(p.yaw)*s)*speed*dt;p.z+=(Math.cos(p.yaw)*f-Math.sin(p.yaw)*s)*speed*dt;p.x=clamp(p.x,-42,42);p.z=clamp(p.z,-8,68)}state.near=null;let nd=2.8;state.victims.forEach(v=>{deteriorate(v);if(v.walking&&!v.tag){v.x+=Math.sin(v.moveDir)*dt*(.35+state.level*.05);v.z+=Math.cos(v.moveDir)*dt*(.35+state.level*.05);if(Math.abs(v.x)>34||v.z<5||v.z>62)v.moveDir+=Math.PI*.8}const d=dist(p,v);if(!v.tag&&d<nd){nd=d;state.near=v}});document.getElementById('prompt').style.display=state.near?'block':'none';}
+function draw(){const w=innerWidth,h=innerHeight-64;ctx.clearRect(0,0,w,h);const sc=state.scenario;let sky=sc.weather==='night'?'#05070b':sc.weather==='smoke'||sc.weather==='dust'?'#3a3730':'#172334';let ground=sc.weather==='flood'||sc.weather==='rain'||sc.weather==='storm'?'#123044':'#1a211d';ctx.fillStyle=sky;ctx.fillRect(0,0,w,h*.55);ctx.fillStyle=ground;ctx.fillRect(0,h*.55,w,h*.45);ctx.strokeStyle='rgba(255,255,255,.06)';for(let i=0;i<14;i++){const y=h*.55+i*32;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke()}drawEnvironment(w,h,sc);const visible=[];state.victims.forEach(v=>{const pr=project(v.x,v.z,w,h);if(pr&&pr.depth>0)visible.push({v,pr})});visible.sort((a,b)=>b.pr.depth-a.pr.depth).forEach(o=>drawVictim(o.v,o.pr));drawWeapon(w,h);}
+function drawEnvironment(w,h,sc){ctx.save();const t=Date.now()/1000;if(['smoke','dust','haze','storm'].includes(sc.weather)){for(let i=0;i<25;i++){ctx.fillStyle=sc.weather==='haze'?'rgba(180,255,180,.05)':'rgba(210,210,210,.05)';const x=(i*97+t*18)%(w+160)-80,y=(i*41+t*8)%(h*.55);ctx.beginPath();ctx.ellipse(x,y,90,24,Math.sin(t+i),0,Math.PI*2);ctx.fill()}}if(['rain','storm','flood','wind'].includes(sc.weather)){ctx.strokeStyle='rgba(180,220,255,.22)';for(let i=0;i<80;i++){const x=(i*37+t*280)%w,y=(i*83+t*440)%h;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-12,y+28);ctx.stroke()}}for(let i=0;i<10;i++){const x=(i*151+70)%w,y=h*.55+((i*53)%180);ctx.fillStyle=i%3===0?'#5b3925':'#303742';ctx.fillRect(x,y,60,12);ctx.fillRect(x+12,y-18,18,30)}if(sc.hazards.includes('fire')){for(let i=0;i<4;i++){const x=80+i*190+Math.sin(t+i)*8,y=h*.55+70+i%2*50;ctx.fillStyle='rgba(255,80,20,.22)';ctx.beginPath();ctx.arc(x,y,50+Math.sin(t*6+i)*8,0,Math.PI*2);ctx.fill();ctx.fillStyle='#ff8a22';ctx.beginPath();ctx.moveTo(x,y-50);ctx.lineTo(x+24,y+20);ctx.lineTo(x-25,y+20);ctx.fill()}}ctx.restore()}
+function project(x,z,w,h){const p=state.player,dx=x-p.x,dz=z-p.z;const sin=Math.sin(-p.yaw),cos=Math.cos(-p.yaw);const rx=dx*cos-dz*sin,rz=dx*sin+dz*cos;if(rz<=.3)return null;const f=420;return{x:w/2+rx/rz*f,y:h*.58-(p.eye-1.2)/rz*210,scale:clamp(2.2/rz,0.08,1.2),depth:rz}}
+function drawVictim(v,pr){const size=clamp(185*pr.scale,18,112),x=pr.x,y=pr.y-size*.8;ctx.save();ctx.globalAlpha=v.tag?.length?.1:1;ctx.fillStyle='rgba(0,0,0,.35)';ctx.beginPath();ctx.ellipse(x,pr.y+10,size*.42,size*.08,0,0,Math.PI*2);ctx.fill();let color=v.dead?'#45464c':v.pediatric?'#ffc17c':v.condition>=3?'#e8a19f':'#d0a073';ctx.fillStyle=color;if(v.posture==='lying'||v.dead){ctx.fillRect(x-size*.45,pr.y-size*.12,size*.9,size*.18);ctx.beginPath();ctx.arc(x-size*.55,pr.y-size*.08,size*.16,0,Math.PI*2);ctx.fill()}else{ctx.beginPath();ctx.arc(x,y,size*.18,0,Math.PI*2);ctx.fill();ctx.fillRect(x-size*.16,y+size*.18,size*.32,size*.46);ctx.strokeStyle=color;ctx.lineWidth=Math.max(2,size*.05);ctx.beginPath();ctx.moveTo(x-size*.13,y+size*.62);ctx.lineTo(x-size*.27,y+size*.95);ctx.moveTo(x+size*.13,y+size*.62);ctx.lineTo(x+size*.27,y+size*.95);ctx.moveTo(x-size*.16,y+size*.3);ctx.lineTo(x-size*.38,y+size*.48);ctx.moveTo(x+size*.16,y+size*.3);ctx.lineTo(x+size*.38,y+size*.48);ctx.stroke()}if(!v.tag){ctx.fillStyle=v.calling?'#ffed8d':v.confused?'#bca7ff':'#9fffe8';ctx.font=`${Math.max(10,size*.16)}px Inter`;ctx.textAlign='center';ctx.fillText(v.calling?'HELP!':v.confused?'?':'',x,y-size*.18)}else{ctx.fillStyle={green:'#21d66b',yellow:'#ffd400',red:'#ff3b42',black:'#000'}[v.tag];ctx.fillRect(x-size*.28,y-size*.35,size*.56,18);ctx.fillStyle=v.tag==='yellow'?'#000':'#fff';ctx.font='900 11px Inter';ctx.textAlign='center';ctx.fillText(v.tag.toUpperCase(),x,y-size*.21)}ctx.restore()}
+function drawWeapon(w,h){ctx.save();ctx.translate(w*.56,h*.82);ctx.rotate(-.12);ctx.fillStyle='#243446';ctx.fillRect(0,0,130,34);ctx.fillStyle='#d3b08b';ctx.fillRect(16,-20,42,58);ctx.fillStyle='#ff3b42';ctx.fillRect(72,8,42,12);ctx.fillStyle='#fff';ctx.font='900 10px Inter';ctx.fillText('TRIAGE',75,18);ctx.restore()}
+let last=performance.now();function loop(now){const dt=Math.min(.04,(now-last)/1000);last=now;update(dt);draw();updateTop();requestAnimationFrame(loop)}requestAnimationFrame(loop);
+addEventListener('keydown',e=>{state.keys[e.code]=true;if(e.code==='KeyE'&&state.near)openMenu(state.near)});addEventListener('keyup',e=>state.keys[e.code]=false);canvas.addEventListener('click',()=>canvas.requestPointerLock?.());document.addEventListener('mousemove',e=>{if(document.pointerLockElement===canvas){state.player.yaw-=e.movementX*.0025;state.player.pitch=clamp(state.player.pitch-e.movementY*.0015,-.8,.8)}});
+function openMenu(v){state.selected=v;if(!state.firstPatientAt)state.firstPatientAt=Date.now()-state.start;document.getElementById('menuTitle').textContent=v.name+' - '+(v.pediatric?'JumpSTART pediatric':'START adult');const g=document.getElementById('menuGrid');g.className='menu-grid';g.innerHTML='<button onclick="openTagMenu()">Tag Patient</button><button onclick="checkBreathing()">Check Breathing</button><button onclick="checkPulse()">Check Pulse</button><button onclick="checkRadialPulse()">Check Radial Pulse</button><button onclick="checkCapRefill()">Check Capillary Refill</button><button onclick="assessMental()">Assess Mental Status</button><button onclick="closeMenu()">Close</button>';document.getElementById('menu').classList.add('open')}
+function closeMenu(){document.getElementById('menu').classList.remove('open')}function closeModal(){document.getElementById('modal').classList.remove('open')}document.getElementById('closeModal').onclick=closeModal;
+function openTagMenu(){const g=document.getElementById('menuGrid');g.className='menu-grid tag-grid';g.innerHTML='<button class="green" onclick="tagPatient(\'green\')">Green - Minor</button><button class="yellow" onclick="tagPatient(\'yellow\')">Yellow - Delayed</button><button class="red" onclick="tagPatient(\'red\')">Red - Immediate</button><button class="black" onclick="tagPatient(\'black\')">Black - Expectant / Deceased</button><button onclick="openMenu(state.selected)">Back</button>'}
+function showModal(title,html,viz){document.getElementById('modalTitle').textContent=title;document.getElementById('modalBody').innerHTML=html;document.getElementById('vizDynamic').innerHTML=viz||'';document.getElementById('modal').classList.add('open')}
+function checkBreathing(){const v=state.selected;state.assessmentChecks++;v.assessed.breathing=true;const cls=!v.breathing?'apnea':v.rr>30||v.rr<10?'labored':'';showModal('Breathing Assessment','<div class="finding-box"><strong>Camera focus:</strong> airway, neck, and chest. Watch chest rise and fall naturally before entering a respiratory rate.</div><div class="finding-box">Finding pattern: '+(v.breathing?breathLabel(v):'Apnea')+'</div><div class="row"><button class="btn primary" onclick="countResp()">Count Respirations</button><button class="btn" onclick="airwayOptions()">Reposition Airway</button></div>','<div class="chest '+cls+'"></div>')}
+function breathLabel(v){if(!v.breathing)return'Apnea';if(v.rr>30)return'Tachypnea / labored breathing';if(v.rr<10)return'Bradypnea';if(v.rr<6)return'Agonal respirations';return'Normal respirations'}
+function countResp(){const v=state.selected;showModal('Count Respirations','<div class="finding-box">The chest animation is timed to the patient physiology. Counting succeeds only when the patient is breathing spontaneously.</div><div class="field"><label>Enter counted respirations</label><input id="rrInput" type="number" placeholder="breaths per minute"></div><button class="btn primary" onclick="submitResp()">Submit Respiratory Count</button>','<div class="chest '+(!v.breathing?'apnea':v.rr>30||v.rr<10?'labored':'')+'"></div>')}
+function submitResp(){const v=state.selected,n=Number(document.getElementById('rrInput').value);const ok=v.breathing&&Math.abs(n-v.rr)<=3;if(ok)state.assessmentCorrect++;toast(ok?'Respiratory count accepted.':'Respiratory count inaccurate or patient is apneic.');v.assessed.rr=n;state.assessmentChecks++;checkBreathing()}
+function airwayOptions(){showModal('Reposition Airway','<div class="finding-box">Select the airway maneuver. Trauma and spinal precautions favor jaw-thrust. Medical emergencies without trauma favor head tilt-chin lift.</div><div class="row"><button class="btn primary" onclick="airway(\'jaw\')">Jaw-Thrust Maneuver</button><button class="btn" onclick="airway(\'head\')">Head Tilt-Chin Lift Maneuver</button></div>','<div class="patient-head"></div><div class="patient-body"></div><div style="position:absolute;left:35%;top:44%;font-weight:900;color:var(--cyan)">Responder kneels - hands to mandible / airway</div>')}
+function airway(kind){const v=state.selected;state.assessmentChecks++;const correct=(kind==='jaw'&&v.trauma)||(kind==='head'&&!v.trauma);if(correct)state.assessmentCorrect++;let msg=correct?'Correct airway decision. ':'Educational correction: ';if(!correct)msg+=v.trauma?'Trauma/spinal precaution patient: use jaw-thrust to limit neck movement.':'Medical/non-trauma patient: head tilt-chin lift is appropriate unless spinal trauma is suspected.';v.airwayOpened=true;if(!v.breathing&&v.pulse&&Math.random()<.6){v.breathing=true;v.rr=v.pediatric?18:10;msg+=' Airway repositioning restored spontaneous breathing.'}toast(msg);checkBreathing()}
+function checkPulse(){const v=state.selected;state.assessmentChecks++;v.assessed.pulse=true;showModal('Pulse Assessment','<div class="finding-box">Camera transitions to pulse site. Use the 15-second assessment window and enter your counted pulse.</div><div class="row"><button class="btn primary" onclick="pulseWindow(\'carotid\')">Carotid Pulse</button><button class="btn" onclick="pulseWindow(\'radial\')">Radial Pulse</button></div>','<div class="pulse-dot '+(!v.pulse?'absent':'')+'"></div>')}
+function checkRadialPulse(){const v=state.selected;v.assessed.radial=true;state.assessmentChecks++;if(v.radial)state.assessmentCorrect++;showModal('Radial Pulse','<div class="finding-box">Radial pulse is '+(v.radial?'present.':'absent or not palpable.')+' Finding quality: '+pulseQuality(v)+'</div><button class="btn primary" onclick="closeModal()">Done</button>','<div class="pulse-dot '+(!v.radial?'absent':'')+'"></div>')}
+function pulseQuality(v){if(!v.pulse)return'Absent';if(v.pulse<55)return'Weak / thready';if(v.pulse>125)return'Bounding or rapid';return v.radial?'Normal':'Thready'}
+function pulseWindow(site){const v=state.selected;let left=15;showModal(site+' Pulse - 15 Second Window','<div class="finding-box" id="pulseTimer">Assessment window: 15 seconds</div><div class="field"><label>Enter counted pulse</label><input id="pulseInput" type="number" placeholder="beats per minute"></div><button class="btn primary" onclick="submitPulse()">Submit Pulse Count</button>','<div class="pulse-dot '+(!v.pulse?'absent':'')+'"></div>');const iv=setInterval(()=>{left--;const el=document.getElementById('pulseTimer');if(el)el.textContent='Assessment window: '+left+' seconds';if(left<=0)clearInterval(iv)},1000)}
+function submitPulse(){const v=state.selected,n=Number(document.getElementById('pulseInput').value);const ok=(!v.pulse&&n===0)||(v.pulse&&Math.abs(n-v.pulse)<=12);if(ok)state.assessmentCorrect++;toast(ok?'Pulse count accepted.':'Pulse count inaccurate.');state.assessmentChecks++;closeModal()}
+function checkCapRefill(){const v=state.selected;v.assessed.cap=true;state.assessmentChecks++;if((v.cap<=2)===true)state.assessmentCorrect++;showModal('Capillary Refill','<div class="finding-box">Responder holds patient hand, compresses fingernail bed, and watches refill timing.</div><div class="finding-box">Result: '+(v.cap>2?'Delayed refill over 2 seconds.':'Normal refill under 2 seconds.')+'</div><button class="btn primary" onclick="closeModal()">Done</button>','<div class="hand"></div><div class="finger"></div><div class="cap-nail refill"></div>')}
+function assessMental(){const v=state.selected;v.assessed.avpu=true;state.assessmentChecks++;state.assessmentCorrect++;showModal('AVPU Mental Status','<div class="finding-box"><strong>AVPU:</strong> '+avpuText(v.avpu)+'</div><div class="row"><button class="btn">Alert</button><button class="btn">Voice</button><button class="btn">Pain</button><button class="btn">Unresponsive</button></div><button class="btn primary" onclick="closeModal()">Document Finding</button>','')}
+function avpuText(a){return a==='A'?'Alert / obeys commands':a==='V'?'Responds to voice':a==='P'?'Responds appropriately to pain':a==='P-bad'?'Inappropriate pain response / posturing':'Unresponsive'}
+function tagPatient(tag){const v=state.selected,correct=correctTag(v);v.tag=tag;state.assessments++;const ok=tag===correct;if(ok)state.correct++;else{if(tags[tag]>tags[correct])state.over++;if(tags[tag]<tags[correct])state.under++;if(correct==='red'&&tag!=='red')state.missedCritical++}state.logs.push({name:v.name,alg:v.pediatric?'JumpSTART':'START',correct,your:tag,ok,why:rationale(v,correct)});toast((ok?'Correct: ':'Incorrect: ')+rationale(v,correct));closeMenu();closeModal();updatePanels()}
+function updatePanels(){document.getElementById('victimCount').textContent=state.victims.filter(v=>!v.tag).length+' active';document.getElementById('victimList').innerHTML=state.victims.map(v=>'<div class="victim-row"><div><strong>'+esc(v.name)+'</strong><div class="small">'+(v.pediatric?'Pediatric':'Adult')+' - '+v.posture+' - '+(v.breathing?'RR '+v.rr:'apneic')+'</div></div><span class="tag '+(v.tag||'')+'">'+(v.tag?esc(v.tag.toUpperCase()):'UNTAGGED')+'</span></div>').join('');const a=analytics();document.getElementById('perfBox').innerHTML='Correct triage: <strong>'+a.correctPct+'%</strong><br>Overtriage: <strong>'+a.overPct+'%</strong><br>Undertriage: <strong>'+a.underPct+'%</strong><br>Patients/min: <strong>'+a.ppm+'</strong><br>Critical missed: <strong>'+state.missedCritical+'</strong><br>Assessment accuracy: <strong>'+a.assessPct+'%</strong>'}
+function analytics(){const elapsed=Math.max(1,(Date.now()-state.start)/1000),n=state.assessments||0;return{correctPct:n?Math.round(state.correct/n*100):0,overPct:n?Math.round(state.over/n*100):0,underPct:n?Math.round(state.under/n*100):0,ppm:(state.assessments/(elapsed/60)).toFixed(1),assessPct:state.assessmentChecks?Math.round(state.assessmentCorrect/state.assessmentChecks*100):0,elapsed:Math.round(elapsed)}}
+function updateTop(){const a=analytics();const m=String(Math.floor(a.elapsed/60)).padStart(2,'0'),s=String(a.elapsed%60).padStart(2,'0');document.getElementById('topTime').textContent=m+':'+s;document.getElementById('topAssessed').textContent=state.assessments+'/'+state.victims.length;document.getElementById('topScore').textContent=a.correctPct+'%';updatePanelsThrottled()}
+let panelT=0;function updatePanelsThrottled(){if(Date.now()-panelT>1000){panelT=Date.now();updatePanels()}}
+function pushRadio(line){state.radioLines.unshift('['+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})+'] '+line);state.radioLines=state.radioLines.slice(0,6);document.getElementById('radio').innerHTML=state.radioLines.map(l=>'<div class="radio-line">'+esc(l)+'</div>').join('')}
+setInterval(()=>{const pool=['Victim calling for help near debris.','Smoke reducing visibility in hot zone.','Command requests rapid START sweep.','Ambulatory patients moving unpredictably.','Reassess critical patients if delayed.'];pushRadio(pool[Math.floor(Math.random()*pool.length)])},11000);
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',4200)}
+function openDash(){const a=analytics();document.getElementById('dashGrid').innerHTML='<div class="metric"><div class="num">'+a.correctPct+'%</div><div class="lbl">Correct triage</div></div><div class="metric"><div class="num">'+a.overPct+'%</div><div class="lbl">Overtriage</div></div><div class="metric"><div class="num">'+a.underPct+'%</div><div class="lbl">Undertriage</div></div><div class="metric"><div class="num">'+(state.firstPatientAt?Math.round(state.firstPatientAt/1000)+'s':'-')+'</div><div class="lbl">Time to first patient</div></div><div class="metric"><div class="num">'+a.ppm+'</div><div class="lbl">Patients assessed/min</div></div><div class="metric"><div class="num">'+state.missedCritical+'</div><div class="lbl">Critical patients missed</div></div><div class="metric"><div class="num">'+Math.floor(a.elapsed/60)+':'+String(a.elapsed%60).padStart(2,'0')+'</div><div class="lbl">Scene completion time</div></div><div class="metric"><div class="num">'+a.assessPct+'%</div><div class="lbl">Assessment accuracy</div></div>';document.getElementById('dashRows').innerHTML=state.logs.map(r=>'<tr><td>'+esc(r.name)+'</td><td>'+r.alg+'</td><td><span class="tag '+r.correct+'">'+r.correct+'</span></td><td><span class="tag '+r.your+'">'+r.your+'</span></td><td>'+ (r.ok?'Correct':'Incorrect') +'</td><td>'+esc(r.why)+'</td></tr>').join('');document.getElementById('dashboard').classList.add('open')}
+document.getElementById('dashBtn').onclick=openDash;document.getElementById('closeDash').onclick=()=>document.getElementById('dashboard').classList.remove('open');document.getElementById('restartBtn').onclick=()=>document.getElementById('startOverlay').style.display='grid';
+document.querySelectorAll('[data-level]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-level]').forEach(x=>x.classList.remove('active'));b.classList.add('active');state.level=Number(b.dataset.level)});
+document.getElementById('scenarioGrid').innerHTML=scenarios.map((s,i)=>'<button data-scenario="'+i+'">'+esc(s.name)+'<div class="small">Hazards: '+s.hazards.join(', ')+'</div></button>').join('');document.querySelectorAll('[data-scenario]').forEach(b=>b.onclick=()=>{state.scenario=scenarios[Number(b.dataset.scenario)];document.querySelectorAll('[data-scenario]').forEach(x=>x.style.borderColor='var(--line)');b.style.borderColor='var(--cyan)'});
+document.querySelector('[data-scenario="0"]').style.borderColor='var(--cyan)';document.getElementById('beginBtn').onclick=()=>{document.getElementById('startOverlay').style.display='none';initScene()};
+initScene();
 </script>
 </body>
 </html>
