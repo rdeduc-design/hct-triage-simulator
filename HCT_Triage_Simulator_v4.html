@@ -1,0 +1,3538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HCT Triage Simulator</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&family=Rajdhani:wght@600;700&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:#000;overflow:hidden;width:100vw;height:100vh;font-family:'VT323',monospace;}
+  #wrapper{width:100vw;height:100vh;display:flex;flex-direction:column;position:relative;}
+
+  /* ── TITLE ── */
+  #title-screen{
+    position:absolute;inset:0;background:#0a0f1a;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1000;
+  }
+  .title-grid{
+    position:absolute;inset:0;
+    background-image:linear-gradient(rgba(26,184,160,.06)1px,transparent 1px),
+      linear-gradient(90deg,rgba(26,184,160,.06)1px,transparent 1px);
+    background-size:32px 32px;animation:gs 18s linear infinite;
+    pointer-events:none;z-index:0;
+  }
+  @keyframes gs{to{background-position:32px 32px;}}
+  .title-logo{width:80px;height:80px;border-radius:50%;background:#0d1b2a;border:2px solid #1ab8a0;
+    display:flex;align-items:center;justify-content:center;margin-bottom:20px;
+    animation:pr 3s ease-in-out infinite;position:relative;z-index:1;}
+  @keyframes pr{0%,100%{box-shadow:0 0 0 0 rgba(26,184,160,.5);}50%{box-shadow:0 0 0 14px rgba(26,184,160,0);}}
+  .t-main{font-family:'Press Start 2P',monospace;font-size:clamp(13px,2.5vw,22px);color:#fff;
+    letter-spacing:2px;text-align:center;line-height:1.6;position:relative;z-index:1;}
+  .t-sub{font-family:'VT323',monospace;font-size:clamp(16px,2vw,22px);color:#1ab8a0;letter-spacing:4px;margin-top:8px;position:relative;z-index:1;}
+  .t-div{width:180px;height:1px;background:linear-gradient(90deg,transparent,#1ab8a0,transparent);margin:16px auto;position:relative;z-index:1;}
+  .sc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:660px;width:90%;margin:4px 0 18px;max-height:260px;overflow-y:auto;position:relative;z-index:2;}
+  .sc-card{background:#111827;border:1px solid rgba(26,184,160,.3);border-radius:6px;padding:10px 12px;
+    cursor:pointer;transition:all .2s;position:relative;z-index:2;}
+  .sc-card:hover,.sc-card.sel{border-color:#1ab8a0;background:#1a2332;}
+  .sc-icon{font-size:20px;margin-bottom:4px;}
+  .sc-name{font-family:'Press Start 2P',monospace;font-size:8px;color:#e8f0fe;line-height:1.4;}
+  .sc-lv{font-size:12px;color:#7a8fa6;margin-top:3px;}
+  .sc-badge{position:absolute;top:5px;right:5px;width:16px;height:16px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;}
+  .b1{background:#27ae60;color:#fff;}.b2{background:#f39c12;color:#fff;}
+  .b3{background:#e74c3c;color:#fff;}.b4{background:#6c3483;color:#fff;}
+  .btn-start{background:#1ab8a0;color:#0d1b2a;border:none;padding:12px 44px;
+    font-family:'Press Start 2P',monospace;font-size:12px;letter-spacing:2px;
+    border-radius:4px;cursor:pointer;transition:all .2s;image-rendering:pixelated;
+    position:relative;z-index:2;}
+  .btn-start:hover{background:#25d4b8;transform:scale(1.03);}
+  .credits{font-size:11px;color:#7a8fa6;margin-top:10px;letter-spacing:1px;position:relative;z-index:1;}
+
+  /* ── GAME ── */
+  #game-area{flex:1;position:relative;overflow:hidden;display:none;}
+  #gc{position:absolute;top:52px;left:0;image-rendering:pixelated;image-rendering:crisp-edges;}
+
+  /* ── HUD ── */
+  #hud{position:absolute;top:0;left:0;right:0;height:52px;
+    background:linear-gradient(180deg,rgba(5,10,18,.97)0%,rgba(5,10,18,.75)100%);
+    border-bottom:1px solid rgba(26,184,160,.3);display:flex;align-items:center;
+    padding:0 14px;gap:14px;z-index:100;}
+  .hb{display:flex;flex-direction:column;min-width:64px;}
+  .hl{font-family:'Press Start 2P',monospace;font-size:7px;color:#7a8fa6;letter-spacing:1px;}
+  .hv{font-family:'Press Start 2P',monospace;font-size:14px;color:#1ab8a0;}
+  .hsep{width:1px;height:28px;background:rgba(26,184,160,.3);}
+  .hscn{font-family:'Press Start 2P',monospace;font-size:9px;color:#f5a623;flex:1;text-align:center;}
+
+  /* ── BOTTOM ── */
+  #bot{position:absolute;bottom:0;left:0;right:0;height:46px;
+    background:linear-gradient(0deg,rgba(5,10,18,.97)0%,rgba(5,10,18,.75)100%);
+    border-top:1px solid rgba(26,184,160,.3);display:flex;align-items:center;
+    padding:0 14px;gap:18px;z-index:100;}
+  .kb{font-family:'VT323',monospace;font-size:14px;color:#7a8fa6;display:flex;align-items:center;gap:5px;}
+  .kk{background:#1a2332;border:1px solid rgba(26,184,160,.3);border-radius:3px;
+    padding:1px 5px;font-size:11px;color:#e8f0fe;}
+  #elog{flex:1;font-family:'VT323',monospace;font-size:15px;color:#1ab8a0;overflow:hidden;
+    white-space:nowrap;text-overflow:ellipsis;}
+
+  /* ── PROXIMITY ── */
+  #prox{position:absolute;left:50%;bottom:54px;transform:translateX(-50%);
+    background:rgba(5,10,18,.93);border:1px solid #1ab8a0;border-radius:6px;
+    padding:8px 18px;font-family:'VT323',monospace;font-size:18px;color:#e8f0fe;
+    z-index:150;display:none;align-items:center;gap:8px;pointer-events:none;}
+  .pk{background:#1ab8a0;color:#0d1b2a;border-radius:3px;padding:1px 7px;
+    font-weight:700;font-family:'Press Start 2P',monospace;font-size:9px;}
+
+  /* ── GBA DIALOGUE BOX ── */
+  #dlg-wrap{position:absolute;inset:0;z-index:400;display:none;pointer-events:none;}
+  #dlg-box{
+    position:absolute;bottom:46px;left:0;right:0;min-height:190px;
+    background:#f0f0f0;border-top:4px solid #2c3e6a;border-bottom:2px solid #2c3e6a;
+    pointer-events:all;display:flex;align-items:stretch;
+  }
+  #dlg-portrait{
+    width:140px;min-width:140px;background:#e0e8f0;border-right:3px solid #2c3e6a;
+    display:flex;align-items:center;justify-content:center;overflow:hidden;
+    position:relative;
+  }
+  #dlg-portrait canvas{image-rendering:pixelated;image-rendering:crisp-edges;}
+  #dlg-content{flex:1;display:flex;flex-direction:column;padding:8px 14px 8px;overflow:hidden;}
+  #dlg-name{font-family:'Press Start 2P',monospace;font-size:10px;color:#2c3e6a;
+    margin-bottom:8px;border-bottom:1px solid #ccc;padding-bottom:6px;}
+  #dlg-text{font-family:'VT323',monospace;font-size:19px;color:#1a1a2e;line-height:1.3;max-height:52px;overflow:hidden;}
+  #dlg-responses{display:none;flex-direction:column;gap:4px;margin-top:6px;}
+  .dlg-resp{background:#1a1a2e;border:2px solid #1a1a2e;border-radius:3px;
+    padding:4px 10px;font-family:'VT323',monospace;font-size:16px;color:#fff;
+    cursor:pointer;transition:all .15s;text-align:left;}
+  .dlg-resp:hover{background:#c8102e;border-color:#c8102e;}
+  #dlg-next{font-family:'Press Start 2P',monospace;font-size:7px;color:#888;
+    text-align:right;margin-top:6px;animation:blink .8s ease-in-out infinite;}
+  @keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+
+  /* ── ASSESS PANEL ── */
+  #ap{position:absolute;right:14px;top:60px;width:285px;
+    background:rgba(5,10,18,.97);border:1px solid #1ab8a0;border-radius:8px;
+    z-index:200;display:none;flex-direction:column;overflow:hidden;
+    box-shadow:0 0 24px rgba(26,184,160,.18);}
+  .aph{background:#1a2332;padding:10px 14px;border-bottom:1px solid rgba(26,184,160,.3);
+    display:flex;justify-content:space-between;align-items:center;}
+  .apt{font-family:'Press Start 2P',monospace;font-size:9px;color:#1ab8a0;text-transform:uppercase;}
+  .apc{width:20px;height:20px;border-radius:50%;background:rgba(231,76,60,.2);
+    border:1px solid rgba(231,76,60,.5);color:#e74c3c;font-size:11px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;pointer-events:all;}
+  .ap-vits{padding:10px 14px;border-bottom:1px solid rgba(26,184,160,.3);
+    display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}
+  .vb{background:#111827;border-radius:5px;padding:5px 7px;text-align:center;}
+  .vbl{font-size:9px;color:#7a8fa6;font-family:'Press Start 2P',monospace;}
+  .vbv{font-family:'Press Start 2P',monospace;font-size:12px;}
+  .crr{color:#3498db;}.cpr{color:#e74c3c;}.ccr{color:#f39c12;}
+  .ap-acts{padding:10px 14px;display:flex;flex-direction:column;gap:6px;pointer-events:all;}
+  .apb{background:#1a2332;border:1px solid rgba(26,184,160,.3);border-radius:5px;
+    padding:8px 12px;color:#e8f0fe;font-family:'VT323',monospace;font-size:16px;
+    cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:8px;pointer-events:all;}
+  .apb:hover{background:#111827;border-color:#1ab8a0;color:#1ab8a0;}
+  .apbi{width:22px;height:22px;border-radius:3px;background:rgba(26,184,160,.15);
+    display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+  .ap-sub{padding:8px 14px;border-top:1px solid rgba(26,184,160,.3);pointer-events:all;}
+  .apst{font-family:'Press Start 2P',monospace;font-size:7px;color:#7a8fa6;
+    letter-spacing:1px;margin-bottom:7px;text-transform:uppercase;}
+  .apsb{background:#111827;border:1px solid rgba(26,184,160,.3);border-radius:4px;
+    padding:6px 10px;color:#e8f0fe;font-size:15px;cursor:pointer;font-family:'VT323',monospace;
+    transition:all .15s;display:flex;align-items:center;gap:6px;margin-bottom:5px;pointer-events:all;}
+  .apsb:hover{border-color:#1ab8a0;background:rgba(26,184,160,.1);}
+  .ap-inp-row{display:flex;align-items:center;gap:6px;margin-top:5px;}
+  .ap-inp{background:#111827;border:1px solid rgba(26,184,160,.3);border-radius:3px;
+    color:#e8f0fe;font-family:'Press Start 2P',monospace;font-size:12px;
+    padding:5px 8px;width:72px;text-align:center;outline:none;}
+  .ap-inp:focus{border-color:#1ab8a0;}
+  .ap-cfm{background:#1ab8a0;border:none;border-radius:3px;color:#0d1b2a;
+    font-family:'Press Start 2P',monospace;font-weight:700;font-size:8px;
+    padding:5px 10px;cursor:pointer;}
+
+  /* ── TRIAGE ── */
+  #tp{position:absolute;right:14px;top:60px;width:285px;
+    background:rgba(5,10,18,.97);border:1px solid #1ab8a0;border-radius:8px;
+    z-index:201;display:none;flex-direction:column;overflow:hidden;}
+  .tph{background:#1a2332;padding:10px 14px;border-bottom:1px solid rgba(26,184,160,.3);}
+  .tpt{font-family:'Press Start 2P',monospace;font-size:9px;color:#fff;}
+  .tps{font-size:12px;color:#7a8fa6;margin-top:3px;font-family:'VT323',monospace;}
+  .tp-tags{padding:12px;display:flex;flex-direction:column;gap:8px;pointer-events:all;}
+  .tgb{border-radius:6px;padding:10px 12px;cursor:pointer;border:2px solid;
+    display:flex;align-items:center;gap:10px;transition:all .2s;pointer-events:all;}
+  .tgb:hover{transform:translateX(3px);}
+  .tgr{background:rgba(40,55,80,.5);border-color:#445566;}
+  .tgy{background:rgba(40,55,80,.5);border-color:#445566;}
+  .tgg{background:rgba(40,55,80,.5);border-color:#445566;}
+  .tgb_blk{background:rgba(30,40,55,.6);border-color:#334455;}
+  .tcb{width:26px;height:38px;border-radius:3px;flex-shrink:0;}
+  .tcr{background:#445566;}.tcy{background:#445566;}.tcg{background:#445566;}.tcbk{background:#334455;}
+  .ti{flex:1;}
+  .tn{font-family:'Press Start 2P',monospace;font-size:8px;color:#fff;}
+  .td{font-size:13px;color:#7a8fa6;margin-top:3px;font-family:'VT323',monospace;line-height:1.3;}
+
+  /* ── ANIM OVERLAY ── */
+  #aov{position:absolute;inset:0;z-index:250;pointer-events:none;display:none;
+    align-items:center;justify-content:center;}
+  .aob{background:rgba(5,10,18,.97);border:1px solid #1ab8a0;border-radius:10px;
+    padding:18px 26px;text-align:center;max-width:300px;}
+  .aol{font-family:'Press Start 2P',monospace;font-size:8px;color:#1ab8a0;
+    text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;}
+  .aov-vis{font-size:42px;line-height:1;margin-bottom:8px;}
+  .aoc{font-family:'Press Start 2P',monospace;font-size:24px;color:#fff;}
+  .aopb{height:4px;background:#1a2332;border-radius:2px;margin-top:10px;overflow:hidden;}
+  .aopbf{height:100%;background:#1ab8a0;border-radius:2px;transition:width .1s linear;}
+  .aoh{margin-top:8px;font-size:12px;color:#7a8fa6;font-family:'VT323',monospace;}
+
+  /* ── FEEDBACK ── */
+  #fbp{position:absolute;left:50%;top:60px;transform:translateX(-50%);
+    width:340px;background:rgba(5,10,18,.97);border-radius:8px;z-index:300;
+    display:none;flex-direction:column;overflow:hidden;}
+  .fph{padding:12px 16px;display:flex;align-items:center;gap:10px;}
+  .fpi{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;
+    justify-content:center;font-size:18px;flex-shrink:0;}
+  .fpc{background:rgba(46,204,113,.2);border:2px solid #2ecc71;}
+  .fpw{background:rgba(231,76,60,.2);border:2px solid #e74c3c;}
+  .fpp{background:rgba(245,166,35,.2);border:2px solid #f5a623;}
+  .fptit{font-family:'Press Start 2P',monospace;font-size:11px;}
+  .ftc{color:#2ecc71;}.ftw{color:#e74c3c;}.ftp{color:#f5a623;}
+  .fpb{padding:4px 16px 14px;}
+  .fpr{font-size:14px;line-height:1.6;color:#e8f0fe;border-left:3px solid #1ab8a0;
+    padding-left:10px;margin-bottom:10px;font-family:'VT323',monospace;}
+  .fpd{font-family:'Press Start 2P',monospace;font-size:8px;color:#7a8fa6;margin-bottom:10px;}
+  .fp-dis{background:#1ab8a0;border:none;border-radius:5px;color:#0d1b2a;
+    font-family:'Press Start 2P',monospace;font-weight:700;font-size:9px;
+    padding:8px;width:100%;cursor:pointer;pointer-events:all;}
+
+  /* ── ANALYTICS ── */
+  #analytics{position:absolute;inset:0;background:rgba(5,10,18,.98);
+    z-index:500;display:none;flex-direction:column;overflow-y:auto;padding:22px;}
+  .dt{font-family:'Press Start 2P',monospace;font-size:16px;color:#1ab8a0;
+    text-transform:uppercase;letter-spacing:2px;margin-bottom:5px;}
+  .ds{font-family:'VT323',monospace;font-size:16px;color:#7a8fa6;margin-bottom:20px;}
+  .dg{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+    gap:12px;margin-bottom:24px;}
+  .dc{background:#111827;border:1px solid rgba(26,184,160,.3);border-radius:8px;padding:14px;}
+  .dcl{font-size:10px;color:#7a8fa6;font-family:'Press Start 2P',monospace;
+    text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;}
+  .dcv{font-family:'Press Start 2P',monospace;font-size:22px;}
+  .vg{color:#2ecc71;}.va{color:#f5a623;}.vr{color:#e74c3c;}.vt{color:#1ab8a0;}.vw{color:#fff;}
+  .dss{font-family:'Press Start 2P',monospace;font-size:10px;color:#e8f0fe;
+    text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;
+    border-bottom:1px solid rgba(26,184,160,.3);padding-bottom:6px;}
+  .pl{display:flex;flex-direction:column;gap:7px;margin-bottom:22px;}
+  .plr{background:#111827;border:1px solid rgba(26,184,160,.3);border-radius:5px;
+    padding:9px 12px;display:flex;align-items:center;gap:12px;font-size:13px;font-family:'VT323',monospace;}
+  .plrt{width:10px;height:34px;border-radius:2px;flex-shrink:0;}
+  .plri{flex:1;}
+  .plrn{font-weight:600;color:#e8f0fe;}
+  .plrd{color:#7a8fa6;font-size:12px;margin-top:1px;}
+  .plrr{font-family:'Press Start 2P',monospace;font-size:8px;padding:3px 8px;border-radius:3px;}
+  .rc{background:rgba(46,204,113,.2);color:#2ecc71;}
+  .rw{background:rgba(231,76,60,.2);color:#e74c3c;}
+  .db{display:flex;gap:10px;margin-top:6px;}
+  .dbp{padding:10px 24px;border-radius:5px;font-family:'Press Start 2P',monospace;
+    font-size:9px;cursor:pointer;transition:all .2s;}
+  .dbp1{background:#1ab8a0;border:none;color:#0d1b2a;}
+  .dbp2{background:transparent;border:1px solid rgba(26,184,160,.3);color:#e8f0fe;}
+  .dbp1:hover{background:#25d4b8;}
+  .dbp2:hover{border-color:#1ab8a0;}
+  #perf{font-size:15px;line-height:1.7;color:#e8f0fe;margin-bottom:22px;
+    padding:14px;background:#111827;border-radius:7px;border-left:3px solid #1ab8a0;
+    font-family:'VT323',monospace;}
+
+  /* ── MINIMAP ── */
+  #mm{position:absolute;bottom:52px;right:14px;width:130px;height:96px;
+    background:rgba(5,10,18,.9);border:1px solid rgba(26,184,160,.3);
+    border-radius:5px;z-index:100;overflow:hidden;}
+  #mmc{width:100%;height:100%;image-rendering:pixelated;}
+
+  /* ── RADIO ── */
+  #rl{position:absolute;left:14px;bottom:52px;width:248px;
+    background:rgba(5,10,18,.87);border:1px solid rgba(26,184,160,.3);
+    border-radius:5px;z-index:100;overflow:hidden;}
+  .rlh{background:#1a2332;padding:4px 9px;font-family:'Press Start 2P',monospace;
+    font-size:7px;color:#1ab8a0;letter-spacing:2px;display:flex;align-items:center;gap:5px;}
+  .rld{width:5px;height:5px;border-radius:50%;background:#2ecc71;animation:ra 1s ease-in-out infinite;}
+  @keyframes ra{0%,100%{opacity:1;}50%{opacity:.3;}}
+  .rlm{max-height:68px;overflow:hidden;padding:3px 0;}
+  .rlmsg{padding:2px 9px;font-family:'VT323',monospace;font-size:13px;color:#7a8fa6;
+    line-height:1.5;animation:fi .4s ease;}
+  .rlu{color:#f5a623;}.rlc{color:#e74c3c;}
+  @keyframes fi{from{opacity:0;transform:translateX(-8px);}to{opacity:1;transform:translateX(0);}}
+  .supply-btn{background:#1a2332;border:2px solid rgba(26,184,160,.3);border-radius:6px;
+    padding:8px 10px;cursor:pointer;color:#e8f0fe;font-family:'VT323',monospace;font-size:15px;
+    display:flex;flex-direction:column;align-items:center;gap:4px;width:90px;transition:all .15s;pointer-events:all;}
+  .supply-btn:hover{border-color:#1ab8a0;}
+  .supply-btn.selected{border-color:#f5a623;background:rgba(245,166,35,.15);}
+  .supply-img{width:60px;height:44px;image-rendering:pixelated;}
+  .badge-chip{display:inline-flex;align-items:center;gap:5px;background:#1a2332;
+    border:1px solid rgba(245,166,35,.4);border-radius:20px;padding:3px 10px;
+    font-family:'Press Start 2P',monospace;font-size:7px;color:#f5a623;}
+  #inp-name:focus,#inp-section:focus{border-color:#1ab8a0;}
+</style>
+</head>
+<body>
+<div id="wrapper">
+
+<!-- TITLE -->
+<div id="title-screen">
+  <div class="title-grid"></div>
+  <div class="title-logo">
+    <svg width="52" height="52" viewBox="0 0 52 52" fill="none">
+      <circle cx="20" cy="17" r="5" fill="#1ab8a0"/>
+      <circle cx="28" cy="12" r="3" fill="#1ab8a0" opacity=".7"/>
+      <circle cx="36" cy="17" r="4" fill="#1ab8a0" opacity=".9"/>
+      <circle cx="16" cy="27" r="3" fill="#1ab8a0" opacity=".6"/>
+      <circle cx="40" cy="25" r="3" fill="#1ab8a0" opacity=".8"/>
+      <circle cx="20" cy="37" r="4" fill="#1ab8a0" opacity=".9"/>
+      <circle cx="36" cy="37" r="5" fill="#1ab8a0"/>
+      <circle cx="28" cy="42" r="3" fill="#1ab8a0" opacity=".7"/>
+    </svg>
+  </div>
+  <div class="t-main">HCT TRIAGE<br>SIMULATOR</div>
+  <div class="t-sub">EMERGENCY MEDICAL RESPONSE TRAINING</div>
+  <div class="t-div"></div>
+  <div style="display:flex;gap:10px;margin-bottom:12px;position:relative;z-index:2;flex-wrap:wrap;justify-content:center;max-width:660px;width:90%">
+    <input id="inp-name" type="text" placeholder="Student Name" maxlength="40"
+      style="flex:1;min-width:140px;background:#111827;border:1px solid rgba(26,184,160,.4);border-radius:4px;
+      color:#e8f0fe;font-family:'VT323',monospace;font-size:16px;padding:7px 12px;outline:none;"/>
+    <input id="inp-section" type="text" placeholder="Section / Cohort" maxlength="30"
+      style="flex:1;min-width:120px;background:#111827;border:1px solid rgba(26,184,160,.4);border-radius:4px;
+      color:#e8f0fe;font-family:'VT323',monospace;font-size:16px;padding:7px 12px;outline:none;"/>
+  </div>
+  <div style="font-family:'Press Start 2P',monospace;font-size:8px;color:#7a8fa6;letter-spacing:2px;margin-bottom:12px;position:relative;z-index:2;">SELECT SCENARIO</div>
+  <div class="sc-grid" id="sc-grid"></div>
+  <button class="btn-start" onclick="window._patchedStart?window._patchedStart():startGame()">▶ DEPLOY RESPONDER</button>
+  <div class="credits">HCT Academy · R&D Education Dept · v4.0</div>
+  <div id="badge-shelf" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:500px;margin-top:10px;position:relative;z-index:2;min-height:28px;"></div>
+</div>
+
+<!-- GAME -->
+<div id="game-area">
+  <canvas id="gc"></canvas>
+  <canvas id="mmc" style="position:absolute;bottom:52px;right:14px;width:130px;height:96px;border:1px solid rgba(26,184,160,.3);border-radius:5px;background:rgba(5,10,18,.9);z-index:100;"></canvas>
+
+  <!-- HUD -->
+  <div id="hud">
+    <div class="hb"><span class="hl">Time</span><span class="hv" id="ht">00:00</span></div>
+    <div class="hsep"></div>
+    <div class="hb"><span class="hl">Assessed</span><span class="hv" id="ha">0/0</span></div>
+    <div class="hsep"></div>
+    <div class="hb" style="min-width:52px"><span class="hl">Score</span><span class="hv" id="hs" style="color:#f5a623">0%</span></div>
+    <div class="hsep"></div>
+    <div class="hscn" id="hsn">—</div>
+    <div class="hb" style="min-width:40px;text-align:right"><span class="hl">Level</span><span class="hv" style="color:#f5a623" id="hlv">1</span></div>
+    <div style="display:flex;align-items:center;gap:5px;pointer-events:all">
+      <span style="font-family:'Press Start 2P',monospace;font-size:7px;color:#7a8fa6">🔊</span>
+      <input type="range" id="vol-slider" min="0" max="100" value="60" step="1"
+        style="width:60px;height:4px;cursor:pointer;pointer-events:all"
+        oninput="G.masterVol=this.value/100"/>
+    </div>
+    <button onclick="confirmReturnMenu()" style="background:rgba(231,76,60,.2);border:1px solid #e74c3c;color:#e74c3c;padding:4px 10px;border-radius:4px;font-family:'Press Start 2P',monospace;font-size:7px;cursor:pointer;letter-spacing:1px;pointer-events:all;">&#9632; MENU</button>
+  </div>
+
+  <!-- RADIO -->
+  <div id="rl"><div class="rlh"><div class="rld"></div>EMS RADIO</div><div class="rlm" id="rlm"></div></div>
+
+  <!-- PROXIMITY -->
+  <div id="prox"><span class="pk">E</span> <span id="prox-txt">Assess Patient</span></div>
+
+  <!-- ASSESS PANEL -->
+  <div id="ap">
+    <div class="aph"><div class="apt" id="apn">Patient</div><div class="apc" onclick="closeAP()">✕</div></div>
+    <div class="ap-vits">
+      <div class="vb"><div class="vbl">RR</div><div class="vbv crr" id="vrr">?</div></div>
+      <div class="vb"><div class="vbl">PR</div><div class="vbv cpr" id="vpr">?</div></div>
+      <div class="vb"><div class="vbl">CRT</div><div class="vbv ccr" id="vcr">?</div></div>
+    </div>
+    <div class="ap-acts" id="ap-acts">
+      <div class="apb" onclick="doBreath()"><div class="apbi">🫁</div><div><div style="font-size:14px">Check Breathing</div><div style="font-size:11px;color:#7a8fa6">Assess airway & RR</div></div></div>
+      <div class="apb" onclick="doPulse()"><div class="apbi">❤️</div><div><div style="font-size:14px">Check Pulse</div><div style="font-size:11px;color:#7a8fa6">Carotid & radial</div></div></div>
+      <div class="apb" onclick="doCRT()"><div class="apbi">💉</div><div><div style="font-size:14px">Capillary Refill</div><div style="font-size:11px;color:#7a8fa6">Perfusion assessment</div></div></div>
+      <div class="apb" onclick="doAVPU()"><div class="apbi">🧠</div><div><div style="font-size:14px">Mental Status (AVPU)</div><div style="font-size:11px;color:#7a8fa6">Alert · Voice · Pain · Unresponsive</div></div></div>
+      <div class="apb" style="border-color:#f5a623" onclick="showTP()"><div class="apbi" style="background:rgba(245,166,35,.15)">🏷️</div><div><div style="font-size:14px;color:#f5a623">Tag Patient (START)</div><div style="font-size:11px;color:#7a8fa6">Assign triage category</div></div></div>
+    </div>
+    <div id="ap-sub"></div>
+  </div>
+
+  <!-- TRIAGE PANEL -->
+  <div id="tp">
+    <div class="tph"><div class="tpt">START Triage</div><div class="tps">Assign priority tag</div></div>
+    <div class="tp-tags">
+      <div class="tgb tgr" onclick="assignTag('red')"><div class="tcb tcr"></div><div class="ti"><div class="tn">IMMEDIATE</div><div class="td">Life-threatening, survivable. Needs intervention now.</div></div></div>
+      <div class="tgb tgy" onclick="assignTag('yellow')"><div class="tcb tcy"></div><div class="ti"><div class="tn">DELAYED</div><div class="td">Serious but stable. Can wait without immediate risk.</div></div></div>
+      <div class="tgb tgg" onclick="assignTag('green')"><div class="tcb tcg"></div><div class="ti"><div class="tn">MINOR</div><div class="td">Walking wounded. Minor injuries. Can self-direct.</div></div></div>
+      <div class="tgb tgb_blk" onclick="assignTag('black')"><div class="tcb tcbk"></div><div class="ti"><div class="tn">EXPECTANT / DECEASED</div><div class="td">Unsurvivable or deceased. Palliative only.</div></div></div>
+    </div>
+    <div style="padding:0 12px 10px;pointer-events:all"><div class="apb" onclick="closeTP()" style="justify-content:center;color:#7a8fa6;font-size:13px">← Back</div></div>
+  </div>
+
+  <!-- ANIM OVERLAY -->
+  <div id="aov"><div class="aob">
+    <div class="aol" id="aol">Assessment</div>
+    <div class="aov-vis" id="aovis">🫁</div>
+    <div class="aoc" id="aoc">0</div>
+    <div class="aopb"><div class="aopbf" id="aopbf" style="width:0%"></div></div>
+    <div class="aoh" id="aoh"></div>
+  </div></div>
+
+  <!-- FEEDBACK -->
+  <div id="fbp">
+    <div class="fph">
+      <div class="fpi" id="fpi"></div>
+      <div><div class="fptit" id="fptit"></div><div style="font-size:12px;color:#7a8fa6;font-family:'VT323',monospace;margin-top:2px" id="fpsub"></div></div>
+    </div>
+    <div class="fpb">
+      <div class="fpr" id="fpr"></div>
+      <div class="fpd" id="fpd"></div>
+      <button class="fp-dis" onclick="dismissFB()">Continue ▶</button>
+    </div>
+  </div>
+
+  <!-- DIALOGUE -->
+  <div id="dlg-wrap">
+    <div id="dlg-box">
+      <div id="dlg-portrait"><canvas id="dlg-pc" width="120" height="140"></canvas></div>
+      <div id="dlg-content">
+        <div id="dlg-name">Patient</div>
+        <div id="dlg-text">...</div>
+        <div id="dlg-responses"></div>
+        <div id="dlg-next">▼ Press E to continue</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM -->
+  <div id="bot">
+    <div class="kb"><span class="kk">WASD</span> Move</div>
+    <div class="kb"><span class="kk">E</span> Interact</div>
+    <div class="kb"><span class="kk">ESC</span> Close</div>
+    <div id="elog">Mission active — locate and assess all victims.</div>
+  </div>
+
+  <!-- MM canvas bound at top -->
+</div>
+
+<!-- ANALYTICS -->
+<div id="analytics">
+  <div class="dt">Scenario Report</div>
+  <div class="ds" id="dash-sub"></div>
+  <div class="dg" id="dg"></div>
+  <div class="dss">Patient Triage Log</div>
+  <div class="pl" id="dpl"></div>
+  <div class="dss">Performance Analysis</div>
+  <div id="perf"></div>
+  <div class="db">
+    <button class="dbp dbp1" onclick="toMenu()">New Scenario</button>
+    <button class="dbp dbp2" onclick="toMenu()">Main Menu</button>
+    <button class="dbp" style="background:rgba(26,184,160,.15);border:1px solid #1ab8a0;color:#1ab8a0;padding:10px 20px;border-radius:5px;font-family:'Press Start 2P',monospace;font-size:8px;cursor:pointer;" onclick="downloadReport()">⬇ Download Report</button>
+  </div>
+  <div id="badge-report" style="margin-top:12px;display:flex;flex-wrap:wrap;gap:7px;"></div>
+</div>
+
+
+<!-- WOUND INTERVENTION OVERLAY -->
+<div id="wound-overlay" style="position:absolute;inset:0;background:rgba(5,10,18,.96);z-index:600;display:none;flex-direction:column;align-items:center;justify-content:center;gap:0;padding:16px;">
+  <div style="font-family:'Press Start 2P',monospace;font-size:10px;color:#e74c3c;letter-spacing:2px;margin-bottom:10px" id="wo-title">WOUND MANAGEMENT</div>
+  <canvas id="wound-canvas" width="320" height="220" style="border:1px solid rgba(26,184,160,.3);border-radius:6px;image-rendering:pixelated;margin-bottom:10px;background:#1a0808;max-width:90vw;"></canvas>
+  <div id="wo-instruction" style="font-family:'VT323',monospace;font-size:18px;color:#e8f0fe;text-align:center;margin-bottom:10px;max-width:400px;line-height:1.4"></div>
+  <div id="wo-progress-bar" style="width:300px;height:8px;background:#1a2332;border-radius:4px;overflow:hidden;display:none;margin-bottom:10px">
+    <div id="wo-pb-fill" style="height:100%;width:0%;background:#e74c3c;transition:width .1s linear;border-radius:4px;"></div>
+  </div>
+  <div id="wo-supplies" style="display:none;flex-wrap:wrap;gap:8px;justify-content:center;max-width:480px;pointer-events:all"></div>
+  <div id="wo-multi-hint" style="font-family:'VT323',monospace;font-size:14px;color:#7a8fa6;margin-top:6px;display:none">Select all that apply, then confirm</div>
+  <button id="wo-confirm" style="display:none;margin-top:10px;background:#1ab8a0;border:none;color:#0d1b2a;font-family:'Press Start 2P',monospace;font-size:9px;padding:9px 22px;border-radius:4px;cursor:pointer;pointer-events:all" onclick="confirmSupplies()">APPLY SELECTED</button>
+  <button id="wo-skip" style="display:none;margin-top:6px;background:transparent;border:1px solid rgba(26,184,160,.3);color:#7a8fa6;font-family:'Press Start 2P',monospace;font-size:7px;padding:6px 16px;border-radius:4px;cursor:pointer;pointer-events:all" onclick="closeWoundOverlay()">Skip Intervention</button>
+</div>
+
+<!-- BADGE UNLOCK TOAST -->
+<div id="badge-toast" style="position:absolute;top:60px;left:50%;transform:translateX(-50%);
+  background:#1a2332;border:1px solid #f5a623;border-radius:8px;padding:12px 20px;
+  z-index:700;display:none;flex-direction:column;align-items:center;gap:4px;
+  font-family:'Press Start 2P',monospace;text-align:center;min-width:220px;pointer-events:none;">
+  <div style="font-size:22px" id="bt-icon">🏅</div>
+  <div style="font-size:8px;color:#f5a623;letter-spacing:1px">BADGE UNLOCKED</div>
+  <div style="font-size:9px;color:#fff" id="bt-name">First Responder</div>
+</div>
+
+</div><!-- /wrapper -->
+
+<!-- ═══════════════════════════════════════════════════════ AUDIO -->
+<script>
+let AC=null;
+function initAC(){if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();}
+const SFX={
+  beep(f=880,d=.1,v=.15){if(!AC)return;const o=AC.createOscillator(),g=AC.createGain();
+    o.connect(g);g.connect(AC.destination);o.frequency.value=f;o.type='sine';
+    g.gain.setValueAtTime(v,AC.currentTime);g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+d);
+    o.start();o.stop(AC.currentTime+d);},
+  ok(){SFX.beep(660,.08,.12);setTimeout(()=>SFX.beep(880,.15,.12),100);},
+  fail(){SFX.beep(220,.28,.18);setTimeout(()=>SFX.beep(180,.28,.14),320);},
+  warn(){SFX.beep(440,.18,.16);setTimeout(()=>SFX.beep(440,.18,.16),220);},
+  step(){if(!AC)return;const b=AC.createBuffer(1,AC.sampleRate*.07,AC.sampleRate);
+    const d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.exp(-i/d.length*9)*.05;
+    const s=AC.createBufferSource();s.buffer=b;const f=AC.createBiquadFilter();
+    f.type='lowpass';f.frequency.value=280;s.connect(f);f.connect(AC.destination);s.start();},
+  static(){if(!AC)return;const b=AC.createBuffer(1,AC.sampleRate*.25,AC.sampleRate);
+    const d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*.05;
+    const s=AC.createBufferSource();s.buffer=b;const f=AC.createBiquadFilter();
+    f.type='bandpass';f.frequency.value=1800;f.Q.value=.3;s.connect(f);f.connect(AC.destination);s.start();},
+  groan(){if(!AC)return;const o=AC.createOscillator(),g=AC.createGain();
+    o.connect(g);g.connect(AC.destination);o.type='sawtooth';
+    o.frequency.setValueAtTime(100+Math.random()*40,AC.currentTime);
+    o.frequency.linearRampToValueAtTime(70+Math.random()*20,AC.currentTime+.9);
+    g.gain.setValueAtTime(.04,AC.currentTime);g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+.9);
+    o.start();o.stop(AC.currentTime+.9);},
+  breath(type){
+    if(!AC)return;
+    const dur=type==='normal'?1.4:type==='labored'?1.8:.8;
+    const b=AC.createBuffer(1,AC.sampleRate*dur,AC.sampleRate);
+    const d=b.getChannelData(0);
+    for(let i=0;i<d.length;i++){
+      const t=i/AC.sampleRate,env=Math.sin(Math.PI*t/dur);
+      d[i]=(Math.random()*2-1)*env*(type==='labored'?.13:.07);
+    }
+    const s=AC.createBufferSource();s.buffer=b;
+    const f=AC.createBiquadFilter();f.type='bandpass';
+    f.frequency.value=type==='labored'?450:700;f.Q.value=.6;
+    s.connect(f);f.connect(AC.destination);s.start();},
+  siren(on){
+    if(!AC)return;
+    if(SFX._sir){try{SFX._sir.stop();}catch(e){}SFX._sir=null;}
+    if(!on)return;
+    const o=AC.createOscillator(),g=AC.createGain();
+    o.connect(g);g.connect(AC.destination);g.gain.value=.1;o.type='sawtooth';
+    const now=AC.currentTime;
+    for(let i=0;i<16;i++){o.frequency.setValueAtTime(620,now+i);o.frequency.linearRampToValueAtTime(860,now+i+.45);o.frequency.linearRampToValueAtTime(620,now+i+.9);}
+    o.start();o.stop(now+16);SFX._sir=o;},
+  heartbeat(bpm=80){
+    if(!AC)return;const iv=60/bpm;
+    const beat=t=>{
+      const o=AC.createOscillator(),g=AC.createGain();o.connect(g);g.connect(AC.destination);
+      o.type='sine';o.frequency.value=75;g.gain.setValueAtTime(.18,t);g.gain.exponentialRampToValueAtTime(.001,t+.12);
+      o.start(t);o.stop(t+.12);
+      const o2=AC.createOscillator(),g2=AC.createGain();o2.connect(g2);g2.connect(AC.destination);
+      o2.type='sine';o2.frequency.value=58;g2.gain.setValueAtTime(.13,t+.18);g2.gain.exponentialRampToValueAtTime(.001,t+.3);
+      o2.start(t+.18);o2.stop(t+.3);};
+    for(let i=0;i<3;i++)beat(AC.currentTime+i*iv);}
+};
+</script>
+
+<!-- ═══════════════════════════════════════════════════════ PIXEL ART ENGINE -->
+<script>
+// ── PIXEL HELPERS ──────────────────────────────────────────────────
+// All sprites are drawn on a 3x pixel grid (each "pixel" = 3×3 real pixels)
+const S = 3; // pixel scale
+
+function px(ctx, x, y, color) {
+  ctx.fillStyle = color;
+  ctx.fillRect(x * S, y * S, S, S);
+}
+
+function pxRect(ctx, x, y, w, h, color) {
+  ctx.fillStyle = color;
+  ctx.fillRect(x * S, y * S, w * S, h * S);
+}
+
+// ── GROUND TILE RENDERER ──────────────────────────────────────────
+function drawGroundTile(ctx, tx, ty, type) {
+  const x = tx * 48, y = ty * 48; // 16px tile × 3 scale = 48
+  const tileCtx = ctx;
+  tileCtx.save();
+  tileCtx.translate(x, y);
+
+  switch(type) {
+    case 'grass': drawGrassTile(tileCtx); break;
+    case 'road':  drawRoadTile(tileCtx); break;
+    case 'rubble':drawRubbleTile(tileCtx); break;
+    case 'water': drawWaterTile(tileCtx); break;
+    case 'dirt':  drawDirtTile(tileCtx); break;
+    case 'floor': drawFloorTile(tileCtx); break;
+    default: drawGrassTile(tileCtx);
+  }
+  tileCtx.restore();
+}
+
+function drawGrassTile(ctx) {
+  // Base
+  pxRect(ctx, 0,0,16,16, '#3a8a3a');
+  // Texture specks
+  const cols = ['#2e7a2e','#4a9a4a','#3a9a3a'];
+  [[2,3],[5,1],[9,4],[13,2],[1,8],[7,7],[11,9],[4,12],[14,11],[8,14]].forEach(([x,y])=>{
+    pxRect(ctx,x,y,1,1, cols[Math.floor((x+y)%3)]);
+  });
+  // Small flowers occasionally
+  [[3,5],[11,12]].forEach(([x,y])=>{
+    pxRect(ctx,x,y,1,1,'#ffaaaa');
+    pxRect(ctx,x,y-1,1,1,'#cc6666');
+  });
+}
+
+function drawRoadTile(ctx) {
+  pxRect(ctx,0,0,16,16,'#666655');
+  // Asphalt texture
+  [[1,1],[4,3],[8,2],[12,4],[2,7],[6,8],[10,6],[14,8],[3,11],[7,13],[11,12],[13,10]].forEach(([x,y])=>{
+    pxRect(ctx,x,y,1,1,'#555544');
+  });
+  // Center line
+  pxRect(ctx,7,0,2,3,'#ddcc44');
+  pxRect(ctx,7,6,2,3,'#ddcc44');
+  pxRect(ctx,7,12,2,3,'#ddcc44');
+}
+
+function drawRubbleTile(ctx) {
+  pxRect(ctx,0,0,16,16,'#665544');
+  // Broken concrete chunks
+  ctx.fillStyle='#887766';
+  [[0,0,5,4],[7,2,6,3],[2,6,4,5],[9,7,5,4],[1,11,6,4],[8,12,5,3]].forEach(([x,y,w,h])=>{
+    pxRect(ctx,x,y,w,h,'#887766');
+    pxRect(ctx,x+1,y+1,w-1,h-1,'#998877');
+    pxRect(ctx,x,y,1,1,'#aabb99');
+  });
+}
+
+function drawWaterTile(ctx) {
+  pxRect(ctx,0,0,16,16,'#2255aa');
+  [[1,2,4,1],[8,1,5,1],[2,5,3,1],[7,4,4,1],[11,6,3,1],[0,8,5,1],[9,9,4,1],[3,12,5,1],[12,13,3,1]].forEach(([x,y,w,h])=>{
+    pxRect(ctx,x,y,w,h,'#4477cc');
+  });
+  [[3,3],[10,5],[5,10],[13,12]].forEach(([x,y])=>pxRect(ctx,x,y,1,1,'#aaccff'));
+}
+
+function drawDirtTile(ctx) {
+  pxRect(ctx,0,0,16,16,'#8b6b3d');
+  [[2,2],[5,4],[9,1],[13,3],[1,7],[6,9],[11,8],[3,13],[10,12],[14,10]].forEach(([x,y])=>{
+    pxRect(ctx,x,y,1,1,'#7a5c2e');
+  });
+  [[4,6],[12,5],[7,11]].forEach(([x,y])=>pxRect(ctx,x,y,2,1,'#9a7a4d'));
+}
+
+function drawFloorTile(ctx) {
+  pxRect(ctx,0,0,16,16,'#ccbbaa');
+  // Tile grid
+  ctx.fillStyle='#bbaa99';
+  pxRect(ctx,7,0,1,16,'#bbaa99');
+  pxRect(ctx,0,7,16,1,'#bbaa99');
+  pxRect(ctx,0,0,1,1,'#aaa090');
+  pxRect(ctx,15,0,1,1,'#aaa090');
+  pxRect(ctx,0,15,1,1,'#aaa090');
+  pxRect(ctx,15,15,1,1,'#aaa090');
+}
+
+// ── TREE & OBSTACLE SPRITES ──────────────────────────────────────
+function drawTree(ctx, wx, wy) {
+  ctx.save(); ctx.translate(wx, wy);
+  // Shadow
+  ctx.fillStyle='rgba(0,0,0,0.3)';
+  ctx.beginPath(); ctx.ellipse(24,54,16,6,0,0,Math.PI*2); ctx.fill();
+  // Trunk
+  pxRect(ctx,10,32,4,14,'#6b4226');
+  pxRect(ctx,11,32,2,14,'#8b5e3c');
+  // Crown layers
+  [[3,20,18,16,'#2d6e2d'],[1,12,20,14,'#3a8a3a'],[4,6,16,12,'#4aaa4a'],[7,2,10,8,'#55bb55']].forEach(([x,y,w,h,c])=>{
+    pxRect(ctx,x,y,w,h,c);
+    pxRect(ctx,x+1,y-1,w-2,2,'#66cc66');
+  });
+  // Highlight
+  [[9,8],[11,10],[8,13]].forEach(([x,y])=>pxRect(ctx,x,y,2,2,'#88ee88'));
+  ctx.restore();
+}
+
+function drawBuilding(ctx, wx, wy, w, h, wallCol, roofCol, label) {
+  ctx.save(); ctx.translate(wx, wy);
+  // Shadow
+  pxRect(ctx, w/S+1, 2, w/S, h/S+2, 'rgba(0,0,0,0.4)');
+  // Walls
+  pxRect(ctx, 0, 0, w/S, h/S, wallCol);
+  // Roof line
+  pxRect(ctx, 0, 0, w/S, 3, roofCol);
+  // Window grid
+  for(let wx2=2; wx2<w/S-4; wx2+=5) {
+    for(let wy2=5; wy2<h/S-3; wy2+=5) {
+      pxRect(ctx,wx2,wy2,3,3,'#aaccee');
+      pxRect(ctx,wx2+1,wy2+1,1,1,'#ddeeff');
+    }
+  }
+  // Door
+  pxRect(ctx, w/S/2-3, h/S-6, 5, 6, '#8b6b3d');
+  pxRect(ctx, w/S/2-2, h/S-5, 3, 4, '#6b4b2d');
+  ctx.restore();
+}
+
+// ── CHARACTER SPRITE SYSTEM ─────────────────────────────────────────
+// Each "pixel character" is drawn at 3x scale
+// Coordinate origin = top-left of sprite bounding box (0,0)
+// Sprite dimensions: ~8×16 pixels = 24×48px at 3x
+
+function drawRespCharacter(ctx, cx, cy, dir, frame, ts) {
+  // Anatomically proportioned responder: head 1/7 body, torso 3/7, legs 3/7
+  // Total height ~56px at 3x scale (~18.6 px logical = 56px rendered)
+  ctx.save();
+  const bobY = (frame===1||frame===3) ? 1 : 0;
+  ctx.translate(cx, cy + bobY);
+
+  // Shadow
+  ctx.fillStyle='rgba(0,0,0,0.4)';
+  ctx.beginPath(); ctx.ellipse(0,2,10,3,0,0,Math.PI*2); ctx.fill();
+
+  // FEET (boots) - at ground level y=0
+  pxRect(ctx,-6,-3,5,4,'#1a1a2e');   // left boot
+  pxRect(ctx,1,-3,5,4,'#1a1a2e');    // right boot
+  pxRect(ctx,-7,-3,2,2,'#0d0d1a');   // boot toe L
+  pxRect(ctx,5,-3,2,2,'#0d0d1a');    // boot toe R
+
+  // LOWER LEGS - calf shape
+  const legSwingL = frame===1 ? -3 : frame===3 ? 3 : 0;
+  const legSwingR = -legSwingL;
+  pxRect(ctx,-6,-13+legSwingL,5,11,'#1a2e4a');  // left leg
+  pxRect(ctx,1,-13+legSwingR,5,11,'#1a2e4a');   // right leg
+  // Leg highlight
+  pxRect(ctx,-5,-12+legSwingL,1,9,'#253d5f');
+  pxRect(ctx,2,-12+legSwingR,1,9,'#253d5f');
+
+  // UPPER LEGS / HIPS
+  pxRect(ctx,-7,-22,15,10,'#1a2e4a');
+  pxRect(ctx,-6,-21,13,8,'#253d5f');
+
+  // TORSO - hi-vis vest, anatomically wider at shoulders
+  pxRect(ctx,-8,-40,16,19,'#e69c00');   // vest base
+  pxRect(ctx,-7,-40,14,19,'#f5a623');   // vest face
+  // Chest contour
+  pxRect(ctx,-8,-36,1,10,'#c87800');    // left edge shadow
+  pxRect(ctx,7,-36,1,10,'#c87800');     // right edge shadow
+  // Reflective strips
+  pxRect(ctx,-7,-33,14,2,'rgba(255,255,255,0.75)');
+  pxRect(ctx,-7,-29,14,2,'rgba(255,255,255,0.75)');
+  // Vest collar V-line
+  pxRect(ctx,-1,-40,2,4,'#c87800');
+
+  // ARMS - forearm + upper arm, swing animation
+  const armSwing = frame===1 ? -3 : frame===3 ? 3 : 0;
+  // Upper arm (L)
+  pxRect(ctx,-11,-38+armSwing,4,8,'#f5a623');
+  pxRect(ctx,-11,-30+armSwing,4,8,'#d4a574');  // forearm L skin
+  pxRect(ctx,-11,-23+armSwing,4,4,'#c49464');  // hand L
+  // Upper arm (R)
+  pxRect(ctx,7,-38-armSwing,4,8,'#f5a623');
+  pxRect(ctx,7,-30-armSwing,4,8,'#d4a574');    // forearm R skin
+  pxRect(ctx,7,-23-armSwing,4,4,'#c49464');    // hand R
+
+  // NECK
+  pxRect(ctx,-3,-43,6,4,'#d4a574');
+
+  // HEAD - rounded, proper proportions (8px wide, 9px tall logical)
+  pxRect(ctx,-5,-52,10,9,'#d4a574');  // head
+  // Jaw/chin shaping
+  pxRect(ctx,-4,-44,8,1,'#c49464');
+  // Cheekbones
+  pxRect(ctx,-5,-50,1,4,'#c49464');
+  pxRect(ctx,4,-50,1,4,'#c49464');
+
+  // EYES (anatomically placed - upper 1/3 of face)
+  if(dir==='left') {
+    pxRect(ctx,-4,-50,2,2,'#1a1a1a'); pxRect(ctx,-4,-50,1,1,'#fff');
+    pxRect(ctx,0,-50,2,2,'#1a1a1a'); pxRect(ctx,0,-50,1,1,'#fff');
+  } else if(dir==='up') {
+    pxRect(ctx,-3,-51,2,1,'#1a1a1a'); pxRect(ctx,1,-51,2,1,'#1a1a1a');
+  } else {
+    pxRect(ctx,-2,-50,2,2,'#1a1a1a'); pxRect(ctx,-2,-50,1,1,'#fff');
+    pxRect(ctx,2,-50,2,2,'#1a1a1a'); pxRect(ctx,3,-50,1,1,'#fff');
+  }
+  // NOSE - center of face
+  pxRect(ctx,0,-48,1,2,'#b0906a');
+  // MOUTH
+  if(dir!=='up') pxRect(ctx,-2,-46,4,1,'#8b5a5a');
+  // EAR
+  pxRect(ctx,-6,-50,1,3,'#c49464'); pxRect(ctx,5,-50,1,3,'#c49464');
+
+  // HELMET
+  pxRect(ctx,-6,-56,12,6,'#c8102e');  // dome
+  pxRect(ctx,-7,-52,14,3,'#c8102e'); // brim
+  pxRect(ctx,-7,-53,2,2,'#a00000');  // strap shadow L
+  pxRect(ctx,5,-53,2,2,'#a00000');   // strap shadow R
+  // Helmet shine
+  pxRect(ctx,-3,-55,3,2,'rgba(255,150,150,0.5)');
+
+  ctx.restore();
+}
+
+// ── VICTIM SPRITE DEFINITIONS ────────────────────────────────────────
+// Injuries defined per category with realistic pixel placement
+const VICTIM_PROFILES = [
+  // GREEN (minor)
+  {
+    id:'g1', cat:'green', sex:'m', age:'adult', posture:'walk',
+    injuries:[{type:'abrasion',loc:'forehead',desc:'Forehead abrasion, superficial'}],
+    rr:18, pr:82, cr:1.8, avpu:'A', breath:'normal', pulse:'normal', physio:'stable',
+    name:'Male Adult',
+    dialogues:[
+      {text:"Please! I need help, my head is bleeding! Am I going to be okay?",
+       responses:[
+         {text:"You're stable — minor injury. Stay here and wait for further care.", correct:true, why:"Calm, reassuring, directs patient to safe location."},
+         {text:"Run! Go find shelter now!", correct:false, why:"Inappropriate panic — green patients should be directed calmly to the collection point."},
+         {text:"I can't help you right now, keep walking.", correct:false, why:"Dismissive. Green patients still need brief direction and reassurance."}
+       ]}
+    ]
+  },
+  {
+    id:'g2', cat:'green', sex:'f', age:'adult', posture:'walk',
+    injuries:[{type:'laceration',loc:'arm',desc:'Laceration, left forearm'}],
+    rr:16, pr:78, cr:1.6, avpu:'A', breath:'normal', pulse:'normal', physio:'stable',
+    name:'Female Adult',
+    dialogues:[
+      {text:"My arm is cut badly and it won't stop bleeding! Can you help me please?",
+       responses:[
+         {text:"Apply pressure to the wound with your hand and walk to the triage area north of here.", correct:true, why:"Self-care instruction for ambulatory patient is appropriate for GREEN triage."},
+         {text:"That looks terrible, sit down and don't move at all.", correct:false, why:"Restricting ambulatory green patients from the collection point wastes resources."},
+         {text:"Ignore it — you look fine.", correct:false, why:"Dismissive. Wound needs acknowledgment and basic instruction."}
+       ]}
+    ]
+  },
+  // YELLOW (delayed)
+  {
+    id:'y1', cat:'yellow', sex:'m', age:'elderly', posture:'sit',
+    injuries:[{type:'fracture',loc:'leg',desc:'Closed fracture, right tibia'},{type:'abrasion',loc:'face',desc:'Multiple facial abrasions'}],
+    rr:22, pr:96, cr:2.4, avpu:'A', breath:'labored', pulse:'thready', physio:'deteriorating',
+    name:'Elderly Male',
+    dialogues:[
+      {text:"I can't get up! My leg — I think it's broken! The pain is unbearable…",
+       responses:[
+         {text:"You're priority 2 — delayed. Stay still, help is coming. I'll mark you for care.", correct:true, why:"Correct for YELLOW: serious but stable, communicates priority, immobilizes patient."},
+         {text:"You're fine, just rest and we'll be back soon.", correct:false, why:"Understates severity — fractured tibia is a serious injury requiring monitoring."},
+         {text:"Can you try crawling to that building over there?", correct:false, why:"Mobilizing a fracture patient without splinting risks further injury."}
+       ]}
+    ]
+  },
+  {
+    id:'y2', cat:'yellow', sex:'f', age:'adult', posture:'debris',
+    injuries:[{type:'laceration',loc:'scalp',desc:'Deep scalp laceration, bleeding controlled'},{type:'contusion',loc:'chest',desc:'Chest contusion, no pneumothorax'}],
+    rr:24, pr:100, cr:2.8, avpu:'V', breath:'labored', pulse:'weak', physio:'deteriorating',
+    name:'Female Trapped',
+    dialogues:[
+      {text:"Help me! I'm stuck under something… I can hear you… please get me out…",
+       responses:[
+         {text:"I hear you. I'm marking you for immediate extrication. Don't move your neck. Help is coming.", correct:true, why:"Correct: acknowledges patient, immobilizes c-spine verbally, reassures, and marks for priority extrication."},
+         {text:"Sorry, I can't remove debris alone — keep screaming so others find you.", correct:false, why:"Abandoning a responsive trapped patient without marking or reassurance is inadequate."},
+         {text:"You're fine where you are — stay under the debris for safety.", correct:false, why:"Incorrect. Trapped patients need marking and verbal reassurance, not dismissal."}
+       ]}
+    ]
+  },
+  {
+    id:'y3', cat:'yellow', sex:'m', age:'young', posture:'lie',
+    injuries:[{type:'fracture',loc:'arm',desc:'Open fracture, right radius'},{type:'wound',loc:'shoulder',desc:'Puncture wound, right shoulder'}],
+    rr:20, pr:90, cr:2.2, avpu:'A', breath:'normal', pulse:'normal', physio:'stable',
+    name:'Young Male',
+    dialogues:[
+      {text:"My arm is messed up bad — bone is sticking out! What do I do?! I feel sick…",
+       responses:[
+         {text:"Don't look at it. Don't try to move the arm. I'm tagging you delayed — help will reach you shortly.", correct:true, why:"Correct immobilization instruction, honest prioritization for YELLOW category."},
+         {text:"Try to splint it yourself with nearby wood.", correct:false, why:"Open fractures require trained splinting. DIY risks infection and neurovascular injury."},
+         {text:"Walk to the medical tent — it's not that far.", correct:false, why:"Mobilizing an open fracture patient without splinting is dangerous."}
+       ]}
+    ]
+  },
+  // RED (immediate)
+  {
+    id:'r1', cat:'red', sex:'m', age:'adult', posture:'lie',
+    injuries:[{type:'hemorrhage',loc:'abdomen',desc:'Evisceration, abdominal trauma, severe bleeding'},{type:'laceration',loc:'thigh',desc:'Arterial laceration, right thigh'}],
+    rr:32, pr:130, cr:4.2, avpu:'V', breath:'tachypnea', pulse:'weak', physio:'hemorrhage',
+    name:'Male Trauma',
+    dialogues:[] // RED — no dialogue
+  },
+  {
+    id:'r2', cat:'red', sex:'f', age:'adult', posture:'lie',
+    injuries:[{type:'burn',loc:'torso',desc:'Full-thickness burns, chest and arms (>20% BSA)'},{type:'airway',loc:'face',desc:'Facial burns, potential airway compromise'}],
+    rr:34, pr:120, cr:3.8, avpu:'P', breath:'tachypnea', pulse:'weak', physio:'shock',
+    name:'Female Burns',
+    dialogues:[]
+  },
+  {
+    id:'r3', cat:'red', sex:'m', age:'elderly', posture:'lie',
+    injuries:[{type:'head',loc:'skull',desc:'Depressed skull fracture, right temporal'},{type:'hemorrhage',loc:'head',desc:'Intracranial hemorrhage suspected'}],
+    rr:8, pr:50, cr:5.5, avpu:'P', breath:'bradypnea', pulse:'thready', physio:'shock',
+    name:'Elderly Critical',
+    dialogues:[]
+  },
+  {
+    id:'r4', cat:'red', sex:'f', age:'young', posture:'lie',
+    injuries:[{type:'pneumothorax',loc:'chest',desc:'Tension pneumothorax, right side — tracheal deviation'},{type:'rib',loc:'chest',desc:'Multiple rib fractures, right lateral'}],
+    rr:36, pr:118, cr:3.5, avpu:'V', breath:'tachypnea', pulse:'weak', physio:'tension_ptx',
+    name:'Tension PTX',
+    dialogues:[]
+  },
+  // BLACK (expectant)
+  {
+    id:'b1', cat:'black', sex:'m', age:'adult', posture:'lie',
+    injuries:[{type:'crush',loc:'chest',desc:'Massive crush injury, chest — incompatible with survival'},{type:'multiple',loc:'body',desc:'Multiple severe trauma, non-survivable'}],
+    rr:0, pr:0, cr:8.0, avpu:'U', breath:'apnea', pulse:'absent', physio:'deceased',
+    name:'Expectant',
+    dialogues:[]
+  },
+  {
+    id:'b2', cat:'black', sex:'f', age:'elderly', posture:'lie',
+    injuries:[{type:'head',loc:'head',desc:'Unsurvivable head trauma, exposed brain matter'},{type:'multiple',loc:'body',desc:'Polytrauma, non-survivable'}],
+    rr:2, pr:0, cr:9.0, avpu:'U', breath:'agonal', pulse:'absent', physio:'deceased',
+    name:'Expectant',
+    dialogues:[]
+  }
+];
+
+// ── SCENARIO DATA ────────────────────────────────────────────────────
+const SCENARIOS = [
+  {id:'mvc',    name:'Multi-Vehicle Collision', icon:'🚗', level:2, map:'road',   victims:[0,1,2,4,5,7,8,9]},
+  {id:'quake',  name:'Earthquake Collapse',     icon:'🏚️', level:3, map:'rubble', victims:[0,1,2,3,4,5,6,7,8,9]},
+  {id:'fire',   name:'Building Fire',           icon:'🔥', level:2, map:'floor',  victims:[0,1,2,4,5,6,7,9]},
+  {id:'flood',  name:'Flood Disaster',          icon:'🌊', level:2, map:'water',  victims:[0,1,2,3,5,7,8,9]},
+  {id:'explode',name:'Industrial Explosion',    icon:'💥', level:4, map:'rubble', victims:[0,1,2,3,4,5,6,7,8,9]},
+  {id:'chem',   name:'Chemical Exposure',       icon:'☣️', level:3, map:'dirt',   victims:[0,1,2,4,5,6,8,9]},
+  {id:'violence',name:'Active Violence',        icon:'🚨', level:4, map:'floor',  victims:[0,1,2,4,5,6,7,8,9]},
+  {id:'airport',name:'Airport Disaster',        icon:'✈️', level:3, map:'floor',  victims:[0,1,2,3,4,5,6,7,8,9]},
+  {id:'hospital',name:'Hospital Overflow',      icon:'🏥', level:3, map:'floor',  victims:[0,1,2,3,5,6,7,8,9]},
+  {id:'typhoon',name:'Typhoon Evacuation',      icon:'🌀', level:2, map:'dirt',   victims:[0,1,2,3,4,5,7,8,9]},
+  {id:'train',  name:'Train Derailment',        icon:'🚂', level:3, map:'road',   victims:[0,1,2,3,4,5,6,7,8,9]},
+  {id:'stadium',name:'Stadium Incident',        icon:'🏟️', level:4, map:'grass',  victims:[0,1,2,3,4,5,6,7,8,9]}
+];
+
+const RADIO_MSGS = [
+  {text:'Command to all units: MCI confirmed, multiple casualties.', type:'urgent'},
+  {text:'EMS dispatch: Additional units en route, ETA 8 min.', type:''},
+  {text:'Incident Command: Triage area established at grid alpha.', type:'urgent'},
+  {text:'Unit 4: Minimum 6 red-tag patients in eastern sector.', type:'critical'},
+  {text:'Medical Control: Alert trauma center, 10+ casualties expected.', type:''},
+  {text:'Hazmat: Environmental hazard detected — PPE required.', type:'urgent'},
+  {text:'Fire command: Structural instability in Zone B.', type:'critical'},
+  {text:'All units: Report counts to command every 5 minutes.', type:''},
+  {text:'Dispatch: Helicopter LZ secured at north parking lot.', type:''},
+  {text:'Unit 7: Cardiac arrest in Sector 3, CPR initiated.', type:'critical'},
+  {text:'Command: All GREEN tags to secondary collection.', type:''},
+  {text:'Medical director: Penetrating trauma priority for transport.', type:'urgent'}
+];
+
+// ── GAME STATE ───────────────────────────────────────────────────────
+const G = {
+  canvas:null, ctx:null, mmCanvas:null, mmCtx:null,
+  W:0, H:0, mapW:1280, mapH:896,
+  camX:0, camY:0,
+  player:{x:120,y:400,spd:2.8,frame:0,dir:'right',stepT:0},
+  victims:[],
+  keys:{}, touch:{},
+  scenario:null, running:false, paused:false,
+  startT:0, elapsed:0,
+  assessed:0, score:0,
+  scoreLog:[], assessLog:[],
+  nearV:null, activeV:null,
+  radioT:0, radioIdx:0,
+  particles:[],
+  tileMap:[], colliders:[],
+  dlgState:{active:false,phase:'text',responded:false},
+  ran:false,
+  mapTileType:'grass'
+};
+
+// ── BUILD TITLE ───────────────────────────────────────────────────────
+function buildTitle() {
+  const grid = document.getElementById('sc-grid');
+  grid.innerHTML = '';
+  SCENARIOS.forEach((s,i) => {
+    const c = document.createElement('div');
+    c.className = 'sc-card' + (i===0?' sel':'');
+    c.innerHTML = `<div class="sc-icon">${s.icon}</div><div class="sc-name">${s.name}</div><div class="sc-lv">LVL ${s.level} · ${s.victims.length} victims</div><div class="sc-badge b${s.level}">${s.level}</div>`;
+    c.onclick = () => {
+      document.querySelectorAll('.sc-card').forEach(x => x.classList.remove('sel'));
+      c.classList.add('sel');
+      G._selIdx = i;
+    };
+    grid.appendChild(c);
+  });
+  G._selIdx = 0;
+}
+
+// ── START GAME ────────────────────────────────────────────────────────
+function startGame() {
+  initAC();
+  G.scenario = SCENARIOS[G._selIdx || 0];
+  G.mapTileType = G.scenario.map;
+
+  document.getElementById('title-screen').style.display = 'none';
+  document.getElementById('analytics').style.display = 'none';
+  document.getElementById('game-area').style.display = 'block';
+
+  G.canvas = document.getElementById('gc');
+  G.mmCanvas = document.getElementById('mmc');
+  G.ctx = G.canvas.getContext('2d');
+  G.mmCtx = G.mmCanvas.getContext('2d');
+
+  G.W = window.innerWidth;
+  G.H = window.innerHeight - 52 - 46;
+  G.canvas.width = G.W; G.canvas.height = G.H;
+  G.canvas.style.top = '52px';
+
+  G.player = {x:100, y:380, spd:2.8, frame:0, dir:'right', stepT:0};
+  G.camX = 0; G.camY = 0;
+  G.assessed = 0; G.score = 0;
+  G.scoreLog = []; G.assessLog = [];
+  G.startT = performance.now();
+  G.running = true; G.ran = false;
+  G.radioT = 0; G.radioIdx = 0;
+  G.particles = [];
+
+  buildTileMap();
+  buildColliders();
+  spawnVictims();
+  setupHUD();
+  pushRadio();
+
+  setTimeout(() => SFX.siren(true), 300);
+  setTimeout(() => SFX.siren(false), 6000);
+
+  if (G.scenario.id === 'explode') setTimeout(() => SFX.breath('labored'), 1000);
+
+  document.getElementById('hud').style.display = 'flex';
+  document.getElementById('bot').style.display = 'flex';
+
+  window.addEventListener('resize', () => {
+    G.W = window.innerWidth;
+    G.H = window.innerHeight - 52 - 46;
+    G.canvas.width = G.W;
+    G.canvas.height = G.H;
+  });
+
+  requestAnimationFrame(loop);
+}
+
+// ── TILE MAP ─────────────────────────────────────────────────────────
+function buildTileMap() {
+  const tw = Math.ceil(G.mapW / 48) + 1;
+  const th = Math.ceil(G.mapH / 48) + 1;
+  G.tileMap = [];
+  for(let y = 0; y < th; y++) {
+    G.tileMap[y] = [];
+    for(let x = 0; x < tw; x++) {
+      let type = G.mapTileType;
+      // Road stripe for certain scenarios
+      if(G.scenario.id === 'mvc' || G.scenario.id === 'train') {
+        if(y >= 6 && y <= 8) type = 'road';
+      }
+      // Add some variation
+      if(Math.random() < 0.05 && type === 'grass') type = 'dirt';
+      G.tileMap[y][x] = type;
+    }
+  }
+}
+
+// ── COLLISION OBJECTS ────────────────────────────────────────────────
+function buildColliders() {
+  G.colliders = [];
+  const sid = G.scenario.id;
+
+  if(sid==='typhoon'||sid==='flood') {
+    // Nipa huts
+    [[150,200,66,36],[400,300,66,36],[700,250,66,36],[950,180,66,36],
+     [300,550,66,36],[750,500,66,36],[1100,400,66,36],[500,700,66,36]].forEach(([x,y,w,h])=>G.colliders.push({x,y,w,h}));
+    // Flooded areas (slow but passable — just use as obstacles for simplicity)
+    [[100,300,80,40],[400,500,120,50],[800,380,90,45]].forEach(([x,y,w,h])=>G.colliders.push({x,y,w,h}));
+  } else if(sid==='train') {
+    // Train cars
+    [[220,160,160,80],[400,140,160,80],[580,155,160,80]].forEach(([x,y,w,h])=>G.colliders.push({x,y,w,h}));
+    // Pillars
+    [[276,180,12,80],[446,180,12,80],[616,180,12,80],[786,180,12,80],[956,180,12,80]].forEach(([x,y,w,h])=>G.colliders.push({x,y,w,h}));
+    // Platform edge
+    G.colliders.push({x:200,y:200,w:880,h:8});
+    G.colliders.push({x:200,y:318,w:880,h:8});
+  } else if(sid==='fire') {
+    // Market stalls
+    [[100,100,100,60],[220,100,100,60],[340,100,100,60],[460,100,100,60],
+     [100,200,100,60],[220,200,100,60],[340,200,100,60],[580,100,100,60],
+     [100,380,100,60],[280,380,120,60],[450,380,100,60],[700,200,100,60]].forEach(([x,y,w,h])=>G.colliders.push({x,y,w,h}));
+    // Fire truck
+    G.colliders.push({x:900,y:520,w:200,h:80});
+  } else if(sid==='hospital') {
+    // Evac center buildings
+    G.colliders.push({x:300,y:80,w:600,h:180});
+    // Tents
+    [[120,300,100,60],[250,320,100,60],[1000,280,100,60],[1100,320,100,60]].forEach(([x,y,w,h])=>G.colliders.push({x,y,w,h}));
+    // Water barrier
+    G.colliders.push({x:0,y:690,w:1280,h:106});
+  } else {
+    // Generic: trees + buildings
+    [[80,80],[800,120],[200,700],[1100,600],[600,200],[400,800],[950,300],[150,550],[700,750],[1050,180]].forEach(([tx,ty])=>G.colliders.push({x:tx-10,y:ty-20,w:20,h:20}));
+    if(sid==='hospital'||sid==='violence'||sid==='airport') {
+      G.colliders.push({x:600,y:100,w:240,h:144});
+      G.colliders.push({x:900,y:600,w:200,h:120});
+    }
+    if(G.scenario.map==='rubble') {
+      [[300,200,60,40],[700,350,80,50],[500,550,70,40],[900,200,50,60],[200,450,60,50],[850,700,70,40]].forEach(([x,y,w,h])=>G.colliders.push({x,y,w,h}));
+    }
+    if(G.scenario.map==='road') {
+      [[250,360,80,44],[420,290,80,44],[650,390,80,44],[850,310,80,44]].forEach(([x,y,w,h])=>G.colliders.push({x,y,w,h}));
+    }
+    // Ambulances
+    G.colliders.push({x:450,y:730,w:72,h:36});
+    G.colliders.push({x:650,y:730,w:72,h:36});
+  }
+}
+
+// ── SPAWN VICTIMS ────────────────────────────────────────────────────
+function spawnVictims() {
+  G.victims = [];
+  const vids = G.scenario.victims;
+  const margin = 100;
+  const usedPos = [];
+
+  vids.forEach((vi, i) => {
+    const tmpl = VICTIM_PROFILES[vi];
+    if(!tmpl) return;
+
+    let vx, vy, tries = 0;
+    do {
+      vx = margin + Math.random() * (G.mapW - margin*2);
+      vy = margin + Math.random() * (G.mapH - margin*2);
+      tries++;
+    } while(usedPos.some(p => Math.hypot(p.x-vx,p.y-vy) < 80) && tries < 30);
+    usedPos.push({x:vx, y:vy});
+
+    G.victims.push({
+      ...tmpl,
+      uid: i,
+      x: vx, y: vy,
+      assessed: false, tagged: null,
+      rrR: false, prR: false, crR: false, avpuR: false,
+      moveDir: {x:(Math.random()-.5)*.8, y:(Math.random()-.5)*.8},
+      moveT: Math.random()*180,
+      breathT: Math.random()*Math.PI*2,
+      groanT: 5+Math.random()*12,
+      dlgDone: false,
+      dlgIdx: 0
+    });
+  });
+}
+
+function setupHUD() {
+  document.getElementById('hsn').textContent = G.scenario.name.toUpperCase();
+  document.getElementById('ha').textContent = '0/' + G.victims.length;
+  document.getElementById('hs').textContent = '0%';
+  document.getElementById('hlv').textContent = G.scenario.level;
+}
+
+// ── MAIN LOOP ────────────────────────────────────────────────────────
+let lastT = 0;
+function loop(ts) {
+  if(!G.running) return;
+  const dt = Math.min((ts - lastT)/1000, .05); lastT = ts;
+  G.elapsed = (ts - G.startT)/1000;
+
+  if(!G.paused) {
+    updatePlayer(dt);
+    updateVictims(dt, ts);
+    updateCamera();
+    updateParticles(dt);
+    checkProximity();
+    G.radioT += dt;
+    if(G.radioT > 13) { G.radioT=0; pushRadio(); }
+  }
+
+  render(ts);
+  updateHUDTick();
+
+  if(G.assessed >= G.victims.length && !G.ran) {
+    G.ran = true; G.running = false;
+    setTimeout(showAnalytics, 1200);
+  }
+  requestAnimationFrame(loop);
+}
+
+// AABB collision check
+function collidesWithObstacles(nx, ny) {
+  const pr = 14; // player radius
+  for(const ob of G.colliders) {
+    if(nx+pr > ob.x && nx-pr < ob.x+ob.w && ny+pr > ob.y && ny-pr < ob.y+ob.h) return true;
+  }
+  return false;
+}
+
+function updatePlayer(dt) {
+  let mx=0, my=0;
+  if(G.keys['ArrowUp']||G.keys['w']||G.keys['W']||G.touch.up) { my=-1; G.player.dir='up'; }
+  if(G.keys['ArrowDown']||G.keys['s']||G.keys['S']||G.touch.down) { my=1; G.player.dir='down'; }
+  if(G.keys['ArrowLeft']||G.keys['a']||G.keys['A']||G.touch.left) { mx=-1; G.player.dir='left'; }
+  if(G.keys['ArrowRight']||G.keys['d']||G.keys['D']||G.touch.right) { mx=1; G.player.dir='right'; }
+
+  if(mx||my) {
+    const spd = G.player.spd;
+    const nx = Math.max(20, Math.min(G.mapW-20, G.player.x + mx*spd));
+    const ny = Math.max(20, Math.min(G.mapH-20, G.player.y + my*spd));
+    // Try full move
+    if(!collidesWithObstacles(nx, ny)) {
+      G.player.x = nx; G.player.y = ny;
+    } else if(!collidesWithObstacles(nx, G.player.y)) {
+      G.player.x = nx; // slide X
+    } else if(!collidesWithObstacles(G.player.x, ny)) {
+      G.player.y = ny; // slide Y
+    }
+    G.player.stepT += dt;
+    if(G.player.stepT > .3) { G.player.stepT=0; SFX.step(); G.player.frame=(G.player.frame+1)%4; }
+  }
+}
+
+function updateVictims(dt, ts) {
+  G.victims.forEach(v => {
+    if(v.cat === 'green' && !v.assessed) {
+      v.moveT -= dt * 60;
+      if(v.moveT <= 0) {
+        v.moveT = 80 + Math.random()*160;
+        v.moveDir = {x:(Math.random()-.5)*1.2, y:(Math.random()-.5)*1.2};
+      }
+      const nvx = Math.max(40, Math.min(G.mapW-40, v.x + v.moveDir.x));
+      const nvy = Math.max(40, Math.min(G.mapH-40, v.y + v.moveDir.y));
+      if(!collidesWithObstacles(nvx, nvy)) { v.x=nvx; v.y=nvy; }
+      else { v.moveDir={x:-v.moveDir.x, y:-v.moveDir.y}; v.moveT=30; }
+    }
+    v.breathT += dt;
+    v.groanT -= dt;
+    if(v.groanT <= 0) {
+      v.groanT = 6+Math.random()*14;
+      const d = Math.hypot(v.x-G.player.x, v.y-G.player.y);
+      if(d < 220 && ['hemorrhage','shock','deteriorating'].includes(v.physio)) SFX.groan();
+    }
+    // Spawn breath particles for breathing victims
+    if(v.cat !== 'black' && v.breath !== 'apnea' && !v.assessed) {
+      if(Math.sin(v.breathT * (v.cat==='red'?3.5:v.cat==='yellow'?2.2:1.5)) > 0.85) {
+        spawnBreathParticle(v.x, v.y);
+      }
+    }
+  });
+}
+
+function spawnBreathParticle(x, y) {
+  G.particles.push({
+    x: x + (Math.random()-.5)*8,
+    y: y - 12,
+    vx: (Math.random()-.5)*.4,
+    vy: -.5 - Math.random()*.4,
+    life:1.2, maxLife:1.2,
+    type:'breath', size:2+Math.random()*2
+  });
+}
+
+function updateCamera() {
+  const tx = G.player.x - G.W/2;
+  const ty = G.player.y - G.H/2;
+  G.camX += (tx - G.camX)*.1;
+  G.camY += (ty - G.camY)*.1;
+  G.camX = Math.max(0, Math.min(G.mapW - G.W, G.camX));
+  G.camY = Math.max(0, Math.min(G.mapH - G.H, G.camY));
+}
+
+function updateParticles(dt) {
+  for(let i=G.particles.length-1;i>=0;i--) {
+    const p=G.particles[i];
+    p.x+=p.vx; p.y+=p.vy;
+    p.life-=dt;
+    if(p.life<=0) G.particles.splice(i,1);
+  }
+}
+
+function updateHUDTick() {
+  const m=Math.floor(G.elapsed/60), s=Math.floor(G.elapsed%60);
+  document.getElementById('ht').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  document.getElementById('ha').textContent=G.assessed+'/'+G.victims.length;
+  const pct = G.assessed>0 ? Math.round(G.score/G.assessed*100) : 0;
+  document.getElementById('hs').textContent=pct+'%';
+}
+
+function checkProximity() {
+  let near=null, md=Infinity;
+  G.victims.forEach(v => {
+    if(v.assessed) return;
+    const d = Math.hypot(v.x-G.player.x, v.y-G.player.y);
+    if(d<72 && d<md) { md=d; near=v; }
+  });
+  G.nearV = near;
+  const p = document.getElementById('prox');
+  if(near && !G.activeV) {
+    p.style.display='flex';
+    document.getElementById('prox-txt').textContent = 'Assess '+near.name;
+  } else {
+    p.style.display='none';
+  }
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────
+function render(ts) {
+  const ctx = G.ctx;
+  if(!ctx) return;
+  ctx.imageSmoothingEnabled = false;
+  ctx.clearRect(0,0,G.W,G.H);
+
+  ctx.save();
+  ctx.translate(-G.camX, -G.camY);
+
+  drawTiles(ctx, ts);
+  drawEnvironment(ctx, ts);
+  drawParticleLayer(ctx, ts);
+  drawVictims(ctx, ts);
+  drawPlayer(ctx, ts);
+
+  ctx.restore();
+  drawMinimap(ts);
+}
+
+function drawTiles(ctx, ts) {
+  const startTX = Math.floor(G.camX/48);
+  const startTY = Math.floor(G.camY/48);
+  const endTX = Math.ceil((G.camX+G.W)/48)+1;
+  const endTY = Math.ceil((G.camY+G.H)/48)+1;
+
+  for(let ty=startTY; ty<endTY; ty++) {
+    for(let tx=startTX; tx<endTX; tx++) {
+      if(ty<0||ty>=G.tileMap.length||tx<0) continue;
+      const row = G.tileMap[ty];
+      if(!row||tx>=row.length) continue;
+      drawGroundTile(ctx, tx, ty, row[tx]);
+    }
+  }
+}
+
+function drawEnvironment(ctx, ts) {
+  const sid = G.scenario.id;
+  if(sid==='typhoon'||sid==='flood') drawEnv_Barangay(ctx, ts);
+  else if(sid==='train') drawEnv_LRT(ctx, ts);
+  else if(sid==='fire') drawEnv_WetMarket(ctx, ts);
+  else if(sid==='flood'||sid==='hospital') drawEnv_EvacCenter(ctx, ts);
+  else drawEnv_Generic(ctx, ts);
+}
+
+function drawEnv_Barangay(ctx, ts) {
+  // Visayas-style barangay, typhoon aftermath
+  const wind = Math.sin(ts*.002)*.5;
+  // Nipa huts
+  const huts = [[150,200],[400,300],[700,250],[950,180],[300,550],[750,500],[1100,400],[500,700]];
+  huts.forEach(([hx,hy])=>{
+    if(!onScreen(hx,hy,100)) return;
+    // Damaged nipa hut
+    // Base platform
+    pxRect(ctx,hx/3,hy/3,22,6,'#8b6b3d');
+    // Walls - bamboo
+    pxRect(ctx,hx/3+1,hy/3-14,20,14,'#c8a878');
+    // Stripes for bamboo
+    for(let i=0;i<20;i+=3) pxRect(ctx,hx/3+i,hy/3-14,1,14,'#a08858');
+    // Damaged roof - tilted
+    ctx.save(); ctx.translate(hx+3,hy-10); ctx.rotate(wind*.15);
+    pxRect(ctx,-14,-12,28,14,'#8b5e3c');
+    pxRect(ctx,-12,-14,24,6,'#6b4020');
+    ctx.restore();
+    // Damage - missing wall section
+    pxRect(ctx,hx/3+14,hy/3-10,6,8,'rgba(0,0,0,0.4)');
+  });
+
+  // Coconut palms (bent from wind)
+  [[200,150],[600,120],[900,200],[1100,320],[350,450],[800,650]].forEach(([px,py])=>{
+    if(!onScreen(px,py,80)) return;
+    ctx.save(); ctx.translate(px,py);
+    // Trunk - bent
+    ctx.strokeStyle='#8b6b3d'; ctx.lineWidth=S*3;
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.bezierCurveTo(wind*20,S*-6,wind*30,S*-12,wind*15,S*-20);
+    ctx.stroke();
+    // Fronds - blown
+    ctx.strokeStyle='#2d8a2d'; ctx.lineWidth=S*2;
+    for(let a=0;a<6;a++){
+      const ang = (a/6)*Math.PI*2 + wind*.3;
+      ctx.beginPath(); ctx.moveTo(wind*15,S*-20);
+      ctx.lineTo(wind*15+Math.cos(ang)*S*8,S*-20+Math.sin(ang)*S*8);
+      ctx.stroke();
+    }
+    ctx.restore();
+  });
+
+  // Flooded patches
+  [[100,300,80,40],[400,500,120,50],[800,380,90,45],[600,650,100,35]].forEach(([fx,fy,fw,fh])=>{
+    ctx.save(); ctx.globalAlpha=0.55;
+    pxRect(ctx,fx,fy,fw,fh,'#2255aa');
+    // Ripples
+    ctx.strokeStyle='#4477cc'; ctx.lineWidth=1;
+    for(let r=0;r<3;r++){
+      const phase=ts*.004+r;
+      ctx.beginPath(); ctx.ellipse(fx+fw/2,fy+fh/2,(fw/3)*(0.5+Math.sin(phase)*.5),(fh/4)*(0.5+Math.sin(phase+1)*.5),0,0,Math.PI*2); ctx.stroke();
+    }
+    ctx.restore();
+  });
+
+  // Debris - blown away roofing, fallen branches
+  [[250,180,30,6,'#8b5e3c'],[550,320,24,4,'#6b4020'],[720,410,40,5,'#5a3a10'],
+   [1000,280,28,4,'#8b5e3c'],[180,420,20,6,'#2d8a2d'],[880,540,35,4,'#6b4020']].forEach(([dx,dy,dw,dh,dc])=>{
+    ctx.save(); ctx.translate(dx,dy); ctx.rotate(Math.sin(dx*.1)*.8);
+    pxRect(ctx,0,0,dw,dh,dc); ctx.restore();
+  });
+
+  // Evacuation markers
+  [[500,150],[900,450]].forEach(([ex,ey])=>{
+    ctx.fillStyle='#e74c3c'; ctx.font='bold 14px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('EVACUATION →',ex,ey);
+    ctx.strokeStyle='#e74c3c'; ctx.lineWidth=2;
+    ctx.strokeRect(ex-52,ey-16,104,22);
+  });
+
+  // Scattered household items
+  [[320,270,12,10,'#8b7a6a'],[680,310,8,12,'#aa8866'],[1050,520,14,8,'#887766']].forEach(([ix,iy,iw,ih,ic])=>{
+    pxRect(ctx,ix,iy,iw,ih,ic);
+  });
+}
+
+function drawEnv_LRT(ctx, ts) {
+  // Metro Manila LRT station collapse
+  // Platform - concrete
+  ctx.fillStyle='#a0a0a0'; ctx.fillRect(200,200,880,120);
+  ctx.fillStyle='#888'; ctx.fillRect(200,200,880,8);
+  // Yellow safety line
+  ctx.fillStyle='#ffcc00'; ctx.fillRect(200,290,880,8);
+
+  // Train cars - derailed, tilted
+  [[220,160,160,80,-0.15],[400,140,160,80,0.08],[580,155,160,80,-0.05]].forEach(([tx,ty,tw,th,tilt])=>{
+    ctx.save(); ctx.translate(tx+tw/2,ty+th/2); ctx.rotate(tilt);
+    pxRect(ctx,-tw/2/S,-th/2/S,tw/S,th/S,'#2255aa');
+    pxRect(ctx,-tw/2/S,-th/2/S,tw/S,8,'#1a4488');
+    // Windows
+    for(let w=1;w<5;w++) pxRect(ctx,-tw/2/S+w*10,2,8,10,'rgba(180,220,255,0.7)');
+    // Damage
+    pxRect(ctx,-8,-th/2/S+2,16,8,'#8b0000');
+    ctx.restore();
+  });
+
+  // Collapsed roof sections
+  [[300,130,120,40,'#886655'],[650,140,100,35,'#776644'],[900,125,90,45,'#887755']].forEach(([rx,ry,rw,rh,rc])=>{
+    ctx.save(); ctx.translate(rx,ry); ctx.rotate(Math.sin(rx*.05)*.2);
+    pxRect(ctx,0,0,rw/S,rh/S,rc);
+    pxRect(ctx,0,0,rw/S,4,'rgba(255,255,255,0.2)');
+    ctx.restore();
+  });
+
+  // Station pillars - some collapsed
+  [[280,180,12,80,true],[450,180,12,80,false],[620,180,12,80,true],[790,180,12,80,false],[960,180,12,80,false]].forEach(([px,py,pw,ph,damaged])=>{
+    ctx.fillStyle=damaged?'#7a6a5a':'#a0a0a0';
+    ctx.fillRect(px,py,pw,ph);
+    if(damaged) {
+      ctx.fillStyle='#5a4a3a'; ctx.fillRect(px,py,pw,ph/3);
+      // Rubble at base
+      ctx.fillStyle='#888'; ctx.beginPath(); ctx.arc(px+pw/2,py+ph,12,0,Math.PI); ctx.fill();
+    }
+  });
+
+  // Station signage
+  ctx.fillStyle='#cc0000'; ctx.fillRect(180,160,120,30);
+  ctx.fillStyle='#fff'; ctx.font='bold 11px sans-serif'; ctx.textAlign='center';
+  ctx.fillText('LRT STATION',240,180);
+
+  // Overhead wire debris
+  ctx.strokeStyle='rgba(80,80,80,0.8)'; ctx.lineWidth=2;
+  [[200,180,400,220],[350,160,600,200],[500,155,750,185]].forEach(([x1,y1,x2,y2])=>{
+    ctx.beginPath(); ctx.moveTo(x1,y1);
+    ctx.quadraticCurveTo((x1+x2)/2,(y1+y2)/2+20+Math.sin(ts*.003)*5,x2,y2); ctx.stroke();
+  });
+
+  // Emergency equipment at platform
+  ctx.fillStyle='#e74c3c'; ctx.fillRect(180,305,30,30);
+  ctx.fillStyle='#fff'; ctx.font='bold 9px sans-serif'; ctx.textAlign='center';
+  ctx.fillText('AED',195,323);
+
+  // Dust/smoke particles
+  [[350,170],[700,180],[950,160]].forEach(([fx,fy])=>{
+    const g=ctx.createRadialGradient(fx,fy,0,fx,fy,40);
+    g.addColorStop(0,'rgba(180,160,130,0.4)'); g.addColorStop(1,'rgba(180,160,130,0)');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(fx,fy,40+Math.sin(ts*.002)*10,0,Math.PI*2); ctx.fill();
+  });
+
+  // Floor cracks
+  ctx.strokeStyle='rgba(60,50,40,0.7)'; ctx.lineWidth=2;
+  [[250,220,320,280],[500,200,560,260],[800,210,870,250]].forEach(([x1,y1,x2,y2])=>{
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo((x1+x2)/2+20,y1+20); ctx.lineTo(x2,y2); ctx.stroke();
+  });
+}
+
+function drawEnv_WetMarket(ctx, ts) {
+  // Wet market building fire
+  // Market stalls
+  const stalls = [[100,100,100,60],[220,100,100,60],[340,100,100,60],[460,100,100,60],
+                  [100,200,100,60],[220,200,100,60],[340,200,100,60],[580,100,100,60],
+                  [100,380,100,60],[280,380,120,60],[450,380,100,60],[700,200,100,60]];
+  stalls.forEach(([sx,sy,sw,sh])=>{
+    // Stall base
+    ctx.fillStyle='#8b6b3d'; ctx.fillRect(sx,sy,sw,sh);
+    // Awning
+    ctx.fillStyle=['#e74c3c','#f39c12','#27ae60','#3498db'][Math.floor((sx+sy)%4)];
+    ctx.fillRect(sx,sy-14,sw,14);
+    // Products on stall (destroyed)
+    for(let i=0;i<4;i++){
+      const px=sx+10+i*22, py=sy+20;
+      ctx.fillStyle=['#cc4422','#228833','#ccaa22','#996633'][i%4];
+      ctx.fillRect(px,py,14,18);
+    }
+  });
+
+  // Market signage
+  ctx.fillStyle='#8b0000'; ctx.fillRect(90,50,500,30);
+  ctx.fillStyle='#fff'; ctx.font='bold 12px sans-serif'; ctx.textAlign='center';
+  ctx.fillText('CENTRAL PALENGKE — BILARAN MARKET',340,70);
+
+  // Fire cells
+  [[220,130],[340,110],[460,120],[220,210],[100,200],[700,220]].forEach(([fx,fy])=>{
+    const phase=ts*.004+fx*.01;
+    const g=ctx.createRadialGradient(fx,fy,0,fx,fy,35+Math.sin(phase)*8);
+    g.addColorStop(0,'rgba(255,200,50,.85)'); g.addColorStop(.4,'rgba(255,80,0,.6)'); g.addColorStop(1,'rgba(100,10,0,0)');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(fx,fy,42+Math.sin(phase)*10,0,Math.PI*2); ctx.fill();
+  });
+
+  // Smoke columns
+  [[250,100],[380,90],[500,105]].forEach(([sx,sy])=>{
+    for(let i=0;i<5;i++){
+      const sy2=sy-i*30; const alpha=0.25-i*.04;
+      if(alpha<=0) return;
+      const sg=ctx.createRadialGradient(sx+Math.sin(ts*.002+i)*15,sy2,0,sx,sy2,25+i*8);
+      sg.addColorStop(0,`rgba(60,60,60,${alpha})`); sg.addColorStop(1,'rgba(60,60,60,0)');
+      ctx.fillStyle=sg; ctx.beginPath(); ctx.arc(sx+Math.sin(ts*.002+i)*15,sy2,25+i*8,0,Math.PI*2); ctx.fill();
+    }
+  });
+
+  // Scattered market goods
+  [[600,320,20,15,'#cc4422'],[640,310,18,20,'#2d8a2d'],[680,340,22,14,'#8b6b3d'],
+   [720,300,15,18,'#cc8833'],[760,330,20,16,'#994433']].forEach(([gx,gy,gw,gh,gc])=>{
+    ctx.save(); ctx.translate(gx,gy); ctx.rotate(Math.sin(gx*.3)*.6);
+    ctx.fillStyle=gc; ctx.fillRect(-gw/2,-gh/2,gw,gh); ctx.restore();
+  });
+
+  // Water hoses on ground
+  ctx.strokeStyle='#ff6600'; ctx.lineWidth=4;
+  ctx.beginPath(); ctx.moveTo(900,600); ctx.bezierCurveTo(800,580,700,560,600,540); ctx.stroke();
+  ctx.strokeStyle='#cc4400'; ctx.lineWidth=2; ctx.stroke();
+
+  // Fire truck partial
+  ctx.fillStyle='#cc2200'; ctx.fillRect(900,520,200,80);
+  ctx.fillStyle='#aa1800'; ctx.fillRect(900,520,200,14);
+  ctx.fillStyle='#ffffff'; ctx.fillRect(920,535,50,30);
+  ctx.fillStyle='#1a1a1a'; ctx.beginPath(); ctx.arc(930,600,12,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(1060,600,12,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#ffcc00'; ctx.font='bold 8px sans-serif'; ctx.textAlign='center';
+  ctx.fillText('BFP',1010,560);
+
+  // Trees around market perimeter
+  [[60,60],[1150,80],[60,680],[1100,650]].forEach(([tx,ty])=>{
+    if(onScreen(tx,ty,80)) drawTree(ctx,tx-24,ty-48);
+  });
+}
+
+function drawEnv_EvacCenter(ctx, ts) {
+  // Coastal evacuation center surge
+  // Main building - school/barangay hall
+  ctx.fillStyle='#ccbbaa'; ctx.fillRect(300,80,600,180);
+  ctx.fillStyle='#aa9988'; ctx.fillRect(300,80,600,18);
+  // Windows
+  for(let w=0;w<6;w++){
+    ctx.fillStyle='rgba(180,220,240,0.6)'; ctx.fillRect(330+w*90,110,50,40);
+    ctx.strokeStyle='#888'; ctx.lineWidth=1; ctx.strokeRect(330+w*90,110,50,40);
+  }
+  // Entrance
+  ctx.fillStyle='#8b6b3d'; ctx.fillRect(555,200,90,60);
+  ctx.fillStyle='rgba(100,150,200,0.3)'; ctx.fillRect(560,205,38,55);
+  ctx.fillStyle='rgba(100,150,200,0.3)'; ctx.fillRect(602,205,38,55);
+  // Sign
+  ctx.fillStyle='#c8102e'; ctx.fillRect(480,60,240,30);
+  ctx.fillStyle='#fff'; ctx.font='bold 10px sans-serif'; ctx.textAlign='center';
+  ctx.fillText('EVACUATION CENTER — BRGY. PUNTA',600,79);
+  ctx.font='8px sans-serif'; ctx.fillText('DepEd Region VI · Emergency Operations',600,89);
+
+  // Tents - orange/blue relief tents
+  [[120,300,100,60,'#f39c12'],[250,320,100,60,'#3498db'],[1000,280,100,60,'#e74c3c'],
+   [1100,320,100,60,'#27ae60'],[120,450,100,60,'#9b59b6'],[250,470,100,60,'#f39c12']].forEach(([tx,ty,tw,th,tc])=>{
+    ctx.fillStyle=tc; ctx.beginPath();
+    ctx.moveTo(tx,ty+th); ctx.lineTo(tx+tw/2,ty); ctx.lineTo(tx+tw,ty+th); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,0.3)'; ctx.lineWidth=1; ctx.stroke();
+    // Tent entrance
+    ctx.fillStyle='rgba(0,0,0,0.3)'; ctx.fillRect(tx+tw/2-10,ty+th-20,20,20);
+    // NDRRMC label
+    ctx.fillStyle='#fff'; ctx.font='7px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('NDRRMC',tx+tw/2,ty+th+8);
+  });
+
+  // Relief goods stacked
+  [[800,350,'RELIEF GOODS'],[850,400,'MEDICINES'],[750,380,'WATER']].forEach(([bx,by,label])=>{
+    for(let i=0;i<3;i++) for(let j=0;j<4;j++){
+      ctx.fillStyle=['#c8a878','#7aa8c8','#e8e8e8'][i%3];
+      ctx.fillRect(bx+j*14,by-i*12,12,12);
+      ctx.strokeStyle='rgba(0,0,0,0.2)'; ctx.lineWidth=.5; ctx.strokeRect(bx+j*14,by-i*12,12,12);
+    }
+    ctx.fillStyle='#333'; ctx.font='8px sans-serif'; ctx.textAlign='center';
+    ctx.fillText(label,bx+28,by+14);
+  });
+
+  // Coastal water (sea)
+  ctx.fillStyle='#2255aa';
+  ctx.fillRect(0,700,1280,196);
+  // Waves
+  for(let wx=0;wx<1280;wx+=60){
+    const wph=ts*.003+wx*.05;
+    ctx.fillStyle='rgba(100,150,200,0.4)';
+    ctx.beginPath(); ctx.arc(wx+Math.sin(wph)*10,700+Math.sin(wph+1)*8,20,Math.PI,0); ctx.fill();
+  }
+  // Surge water creeping inland
+  ctx.fillStyle='rgba(34,85,170,0.35)';
+  ctx.beginPath(); ctx.moveTo(0,690); ctx.lineTo(1280,690);
+  ctx.lineTo(1280,700); ctx.lineTo(0,700); ctx.closePath(); ctx.fill();
+  // Floating debris
+  [[200,720],[500,740],[800,710],[1100,730]].forEach(([dx,dy])=>{
+    ctx.save(); ctx.translate(dx+Math.sin(ts*.003+dx)*.5,dy);
+    ctx.fillStyle='#8b6b3d'; ctx.fillRect(-8,-4,16,8); ctx.restore();
+  });
+
+  // Philippine flag inspired banner
+  ctx.fillStyle='#003087'; ctx.fillRect(400,400,260,25);
+  ctx.fillStyle='#ce1126'; ctx.fillRect(400,420,260,25);
+  ctx.fillStyle='#fff'; ctx.fillRect(400,400,40,50);
+  ctx.fillStyle='#fcd116'; ctx.beginPath(); ctx.moveTo(420,425); ctx.arc(420,425,8,0,Math.PI*2); ctx.fill();
+  ctx.font='9px sans-serif'; ctx.fillStyle='#fff'; ctx.textAlign='center';
+  ctx.fillText('NDRRMC PHIL. RED CROSS',530,415);
+
+  // People queuing
+  for(let i=0;i<8;i++){
+    const qx=300+i*40, qy=620;
+    ctx.fillStyle='#d4a574'; ctx.beginPath(); ctx.arc(qx,qy-20,6,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#5d8aa8'; ctx.fillRect(qx-6,qy-14,12,16);
+    ctx.fillStyle='#1a2e4a'; ctx.fillRect(qx-5,qy+2,4,10); ctx.fillRect(qx+1,qy+2,4,10);
+  }
+
+  // Trees
+  [[80,200],[1150,200],[80,520],[1150,500]].forEach(([tx,ty])=>{
+    if(onScreen(tx,ty,80)) drawTree(ctx,tx-24,ty-48);
+  });
+}
+
+function drawEnv_Generic(ctx, ts) {
+  // Fallback generic environment with rich props
+  const trees=[[80,80],[800,120],[200,700],[1100,600],[600,200],[400,800],[950,300],[150,550],[700,750],[1050,180]];
+  trees.forEach(([tx,ty])=>{ if(onScreen(tx,ty,80)) drawTree(ctx,tx-24,ty-48); });
+
+  if(G.scenario.id==='hospital'||G.scenario.id==='violence'||G.scenario.id==='airport') {
+    drawBuilding(ctx,600,100,240,144,'#ccbbaa','#aa9988','BLDG');
+    drawBuilding(ctx,900,600,200,120,'#bbccaa','#99aa88','ANNEX');
+    // Medical cross
+    ctx.fillStyle='#e74c3c'; ctx.fillRect(696,116,8,36); ctx.fillRect(684,128,32,12);
+  }
+
+  // Ambulances
+  [[450,730],[650,730]].forEach(([ax,ay])=>{
+    ctx.fillStyle='#f0f0f0'; ctx.fillRect(ax,ay,72,36);
+    ctx.fillStyle='#e74c3c'; ctx.fillRect(ax,ay,72,10);
+    ctx.fillStyle='rgba(180,220,240,0.7)'; ctx.fillRect(ax+8,ay+12,20,14); ctx.fillRect(ax+32,ay+12,20,14);
+    ctx.fillStyle='#e74c3c'; ctx.fillRect(ax+28,ay+14,6,10); ctx.fillRect(ax+24,ay+18,14,2);
+    ctx.fillStyle='#f5a623'; ctx.beginPath(); ctx.arc(ax+16,ay+36,6,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(ax+56,ay+36,6,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#333'; ctx.font='7px sans-serif'; ctx.textAlign='center'; ctx.fillText('EMS',ax+36,ay+7);
+  });
+
+  if(['explode','chem'].includes(G.scenario.id)) {
+    [[500,300],[700,450],[850,250],[400,600]].forEach(([fx,fy])=>{
+      const phase=ts*.003;
+      const g=ctx.createRadialGradient(fx,fy,0,fx,fy,40+Math.sin(phase)*8);
+      g.addColorStop(0,'rgba(255,190,40,.75)'); g.addColorStop(.5,'rgba(255,70,0,.45)'); g.addColorStop(1,'rgba(100,10,0,0)');
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(fx,fy,48+Math.sin(phase)*10,0,Math.PI*2); ctx.fill();
+    });
+  }
+
+  // Barricade tape
+  ctx.strokeStyle='#f5a623'; ctx.lineWidth=3; ctx.setLineDash([20,10]);
+  ctx.beginPath(); ctx.moveTo(100,650); ctx.lineTo(500,640); ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function drawParticleLayer(ctx, ts) {
+  G.particles.forEach(p => {
+    const a = p.life/p.maxLife;
+    if(p.type==='breath') {
+      ctx.save();
+      ctx.globalAlpha=a*.4;
+      ctx.fillStyle='rgba(200,220,255,0.7)';
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,p.size*a,0,Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+    }
+  });
+}
+
+// ── VICTIM SPRITE RENDERING ──────────────────────────────────────────
+function drawVictims(ctx, ts) {
+  G.victims.forEach(v => {
+    if(!onScreen(v.x,v.y,80)) return;
+    ctx.save();
+    ctx.translate(v.x, v.y);
+
+    if(v.posture==='walk' || (v.cat==='green' && !v.assessed)) {
+      drawVictimWalking(ctx, v, ts);
+    } else if(v.posture==='sit') {
+      drawVictimSitting(ctx, v, ts);
+    } else if(v.posture==='debris') {
+      drawVictimDebris(ctx, v, ts);
+    } else {
+      drawVictimLying(ctx, v, ts);
+    }
+
+    // Triage tag if assessed
+    if(v.assessed && v.tagged) {
+      const tc = {red:'#e74c3c',yellow:'#f39c12',green:'#27ae60',black:'#5d6d7e'};
+      pxRect(ctx,-7,-46,14,10,tc[v.tagged]);
+      pxRect(ctx,-6,-45,12,8,'rgba(255,255,255,0.15)');
+    }
+
+    // Distress bubble for unassessed green/yellow
+    if(!v.assessed && !v.dlgDone && (v.cat==='green'||v.cat==='yellow')) {
+      const blink = Math.sin(ts*.006)>.3;
+      if(blink) {
+        pxRect(ctx,-8,-52,16,12,'rgba(255,200,50,0.9)');
+        ctx.fillStyle='#1a1a1a'; ctx.font='bold 10px sans-serif'; ctx.textAlign='center';
+        ctx.fillText(v.cat==='green'?'?!':'!',0,-43);
+      }
+    }
+
+    // Nameplate (on proximity)
+    const dist = Math.hypot(v.x-G.player.x, v.y-G.player.y);
+    if(dist<110) {
+      drawNameplate(ctx, v);
+    }
+
+    ctx.restore();
+  });
+}
+
+function drawNameplate(ctx, v) {
+  const catColors = {green:'#27ae60',yellow:'#f39c12',red:'#e74c3c',black:'#aaa'};
+  const bg = 'rgba(5,10,18,0.82)';
+  ctx.fillStyle=bg;
+  ctx.beginPath(); ctx.roundRect(-42,-66,84,16,3); ctx.fill();
+  ctx.fillStyle=catColors[v.cat];
+  ctx.font='8px "Press Start 2P",monospace';
+  ctx.textAlign='center';
+  ctx.fillText(v.name,-0,-55);
+}
+
+// GREEN / WALKING victim
+function drawVictimWalking(ctx, v, ts) {
+  // Anatomically proportioned walking civilian
+  const frame = Math.floor(ts/280)%4;
+  const legSwing = (frame===1||frame===3) ? 3 : 0;
+  const armSwing = -legSwing;
+  const bobY = (frame===1||frame===3) ? 1 : 0;
+  const skinTone = v.sex==='m' ? '#d4a574' : '#e0b898';
+  const hairCol = v.sex==='m' ? '#3a2010' : '#8b4513';
+  const shirtCol = v.sex==='m' ? '#5d8aa8' : '#c47a7a';
+  const pantsCol = '#3a4a5a';
+
+  // Shadow
+  ctx.fillStyle='rgba(0,0,0,.35)';
+  ctx.beginPath(); ctx.ellipse(0,2,10,3.5,0,0,Math.PI*2); ctx.fill();
+
+  // FEET
+  pxRect(ctx,-6,-1,5,4,'#3d2a18');
+  pxRect(ctx,1,-1,5,4,'#3d2a18');
+  pxRect(ctx,-7,-1,2,2,'#2a1a10'); // toe L
+  pxRect(ctx,5,-1,2,2,'#2a1a10'); // toe R
+
+  // LOWER LEGS
+  pxRect(ctx,-6,-11+legSwing,5,11,pantsCol);
+  pxRect(ctx,1,-11-legSwing,5,11,pantsCol);
+  pxRect(ctx,-5,-10+legSwing,1,9,'#4a5a6a');
+  pxRect(ctx,2,-10-legSwing,1,9,'#4a5a6a');
+
+  // UPPER LEGS + HIPS
+  pxRect(ctx,-7,-20,14,10,pantsCol);
+  pxRect(ctx,-6,-19,12,8,'#4a5a6a');
+
+  // TORSO - shirt, anatomical width
+  pxRect(ctx,-8,-38,16,19,shirtCol);
+  // Torso shading (sides)
+  pxRect(ctx,-8,-34,1,12,'rgba(0,0,0,0.2)');
+  pxRect(ctx,7,-34,1,12,'rgba(0,0,0,0.2)');
+
+  // ARMS full length: upper arm + forearm + hand
+  pxRect(ctx,-12,-36+armSwing,4,8,shirtCol);   // upper arm L
+  pxRect(ctx,-12,-28+armSwing,4,9,skinTone);   // forearm L
+  pxRect(ctx,-12,-20+armSwing,4,4,'#c49464');  // hand L
+  pxRect(ctx,8,-36-armSwing,4,8,shirtCol);     // upper arm R
+  pxRect(ctx,8,-28-armSwing,4,9,skinTone);     // forearm R
+  pxRect(ctx,8,-20-armSwing,4,4,'#c49464');    // hand R
+
+  // NECK
+  pxRect(ctx,-3,-41,6,4,skinTone);
+
+  // HEAD (proper proportions: ~8 wide, 10 tall)
+  pxRect(ctx,-5,-51,10,10,skinTone);
+  // Chin rounding
+  pxRect(ctx,-4,-42,8,1,'#c49464');
+  // Cheeks
+  pxRect(ctx,-5,-49,1,4,'#c49464'); pxRect(ctx,4,-49,1,4,'#c49464');
+
+  // HAIR
+  pxRect(ctx,-5,-51,10,4,hairCol);
+  if(v.sex==='f') { pxRect(ctx,-5,-50,1,10,hairCol); pxRect(ctx,4,-50,1,10,hairCol); }
+
+  // EYES (upper third of face)
+  pxRect(ctx,-3,-48,2,2,'#1a1a1a'); pxRect(ctx,-3,-48,1,1,'#fff');
+  pxRect(ctx,1,-48,2,2,'#1a1a1a'); pxRect(ctx,2,-48,1,1,'#fff');
+  // Eyebrows
+  pxRect(ctx,-3,-50,2,1,hairCol); pxRect(ctx,1,-50,2,1,hairCol);
+  // NOSE
+  pxRect(ctx,0,-46,1,2,'#b0906a');
+  // MOUTH
+  pxRect(ctx,-2,-44,4,1,'#8b5a5a');
+  // EARS
+  pxRect(ctx,-6,-49,1,4,skinTone); pxRect(ctx,5,-49,1,4,skinTone);
+
+  v.injuries.forEach(inj => drawInjuryOnWalking(ctx, inj, bobY));
+}
+
+// YELLOW / SITTING
+function drawVictimSitting(ctx, v, ts) {
+  // Anatomically proportioned seated figure
+  const breathY = v.breath==='apnea'?0:Math.sin(v.breathT*2.0)*.6;
+  const skinTone = v.sex==='m' ? '#d4a574' : '#e0b898';
+  const hairCol = v.age==='elderly' ? '#aaaaaa' : (v.sex==='m' ? '#3a2010' : '#8b4513');
+  const shirtCol = '#8b6b3d';
+
+  // Shadow
+  ctx.fillStyle='rgba(0,0,0,.38)';
+  ctx.beginPath(); ctx.ellipse(0,8,14,5,0,0,Math.PI*2); ctx.fill();
+
+  // LOWER LEGS bent forward (sitting pose)
+  pxRect(ctx,-11,4,9,12,'#2c3e50');  // thigh L (horizontal)
+  pxRect(ctx,2,4,9,12,'#2c3e50');   // thigh R
+  // Lower legs hanging down
+  pxRect(ctx,-13,10,5,12,'#2c3e50');
+  pxRect(ctx,8,10,5,12,'#2c3e50');
+  // FEET
+  pxRect(ctx,-15,20,6,4,'#3d2a18');
+  pxRect(ctx,9,20,6,4,'#3d2a18');
+
+  // PELVIS/SEAT
+  pxRect(ctx,-9,2,18,5,'#2c3e50');
+
+  // TORSO - proper width, taper at waist
+  pxRect(ctx,-8,-14+breathY,16,17,shirtCol);
+  pxRect(ctx,-9,-10+breathY,1,8,'rgba(0,0,0,0.2)');
+  pxRect(ctx,8,-10+breathY,1,8,'rgba(0,0,0,0.2)');
+
+  // Chest rise for breathing
+  if(v.breath!=='apnea') {
+    pxRect(ctx,-6,-13+breathY,12,8,'rgba(180,200,230,0.15)');
+  }
+
+  // ARMS resting on knees - anatomical length
+  pxRect(ctx,-12,-10,4,8,shirtCol);  // upper arm L
+  pxRect(ctx,-12,-2,4,10,skinTone); // forearm L
+  pxRect(ctx,-12,7,4,5,'#c49464');   // hand L
+  pxRect(ctx,8,-10,4,8,shirtCol);    // upper arm R
+  pxRect(ctx,8,-2,4,10,skinTone);   // forearm R
+  pxRect(ctx,8,7,4,5,'#c49464');     // hand R
+
+  // NECK
+  pxRect(ctx,-3,-18+breathY,6,5,skinTone);
+
+  // HEAD
+  pxRect(ctx,-5,-28+breathY,10,10,skinTone);
+  pxRect(ctx,-4,-29,8,1,'#c49464');  // chin
+  pxRect(ctx,-5,-27,1,4,'#c49464'); pxRect(ctx,4,-27,1,4,'#c49464'); // cheeks
+
+  // HAIR
+  pxRect(ctx,-5,-28+breathY,10,4,hairCol);
+  if(v.sex==='f') { pxRect(ctx,-5,-27+breathY,1,8,hairCol); pxRect(ctx,4,-27+breathY,1,8,hairCol); }
+  if(v.age==='elderly') { pxRect(ctx,-5,-28+breathY,10,2,hairCol); }
+
+  // EYES
+  pxRect(ctx,-3,-25+breathY,2,2,'#1a1a1a'); pxRect(ctx,-3,-25+breathY,1,1,'#fff');
+  pxRect(ctx,1,-25+breathY,2,2,'#1a1a1a'); pxRect(ctx,2,-25+breathY,1,1,'#fff');
+  // Eyebrows - pain furrowed
+  pxRect(ctx,-3,-27+breathY,2,1,hairCol); pxRect(ctx,1,-27+breathY,2,1,hairCol);
+  // NOSE
+  pxRect(ctx,0,-23+breathY,1,2,'#b0906a');
+  // MOUTH - grimace of pain
+  pxRect(ctx,-3,-21+breathY,6,1,'#7a4040');
+  pxRect(ctx,-2,-20+breathY,2,1,'#9a5050');
+  // EARS
+  pxRect(ctx,-6,-26+breathY,1,4,skinTone); pxRect(ctx,5,-26+breathY,1,4,skinTone);
+
+  v.injuries.forEach(inj => drawInjuryOnSitting(ctx, inj, breathY));
+}
+
+// YELLOW DEBRIS (trapped)
+function drawVictimDebris(ctx, v, ts) {
+  const breathY = Math.sin(v.breathT*1.8)*.5;
+  // Heavy debris slab
+  pxRect(ctx,-28,-18,56,22,'#7a6650');
+  pxRect(ctx,-28,-18,56,4,'#9a8668');
+  pxRect(ctx,-25,-14,4,4,'rgba(255,255,255,.1)');
+  pxRect(ctx,-10,-10,4,4,'rgba(0,0,0,.2)');
+  pxRect(ctx,10,-16,8,4,'rgba(255,255,255,.1)');
+  // Crack in debris
+  ctx.strokeStyle='#5a4838'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(-10*3,-8*3); ctx.lineTo(5*3,-2*3); ctx.stroke();
+
+  // Visible parts under debris — torso/arms showing
+  pxRect(ctx,-12,0,24,12,'#8b6b3d'); // visible shirt
+  pxRect(ctx,-10,1+breathY,20,8,'#8b6b3d');
+  pxRect(ctx,-7,0+breathY,14,4,'rgba(200,220,255,0.2)'); // breath movement
+
+  // Arms sticking out from under debris
+  pxRect(ctx,-18,-2,6,16,'#d4a574'); // Left arm visible
+  pxRect(ctx,12,-2,6,16,'#d4a574'); // Right arm visible
+  pxRect(ctx,-18,12,6,5,'#c49464'); // hands
+
+  // Head visible at one side
+  pxRect(ctx,14,-14,13,13,'#d4a574');
+  pxRect(ctx,14,-15,13,4,'#4a3010');
+  pxRect(ctx,20,-12,2,2,'#1a1a1a');
+
+  // Blood pooling from debris edge
+  pxRect(ctx,-8,10,4,8,'#8b0000');
+  pxRect(ctx,-9,14,3,4,'#6b0000');
+
+  v.injuries.forEach(inj => drawInjuryDebris(ctx, inj, breathY));
+}
+
+// RED/BLACK / LYING
+function drawVictimLying(ctx, v, ts) {
+  // Fully anatomical supine/prone figure - horizontal layout
+  // Character faces right, head at positive X, feet at negative X
+  const isBreathing = v.breath !== 'apnea';
+  const breathY = isBreathing ? Math.sin(v.breathT*(v.physio==='shock'||v.physio==='hemorrhage'?4.0:v.physio==='deceased'?0:2.5))*.5 : 0;
+  const isDeceased = v.physio==='deceased';
+  const skin = isDeceased ? '#b0907a' : '#d4a574';
+  const hair = v.sex==='m' ? '#3a2010' : '#8b4513';
+  const shirt = isDeceased ? '#444' : '#5d8aa8';
+  const pants = isDeceased ? '#1a2530' : '#2c3e50';
+
+  // BLOOD POOL under body
+  if(isDeceased || v.physio==='hemorrhage') {
+    ctx.fillStyle=isDeceased?'rgba(90,0,0,.6)':'rgba(139,0,0,.45)';
+    ctx.beginPath(); ctx.ellipse(0,5,28,9,0,0,Math.PI*2); ctx.fill();
+  }
+  // SHADOW
+  ctx.fillStyle='rgba(0,0,0,.32)';
+  ctx.beginPath(); ctx.ellipse(0,4,26,7,0,0,Math.PI*2); ctx.fill();
+
+  // FEET (leftmost, far from head)
+  pxRect(ctx,-30,-5,7,5,'#3d2a18');  // foot top
+  pxRect(ctx,-30,0,7,4,'#3d2a18');   // foot side
+
+  // LOWER LEGS (calves)
+  pxRect(ctx,-24,-5,12,5,pants);  // leg upper left
+  pxRect(ctx,-24,0,12,5,pants);   // leg lower left
+  // Leg muscle definition
+  pxRect(ctx,-23,-4,10,3,'rgba(255,255,255,0.08)');
+  pxRect(ctx,-23,1,10,3,'rgba(0,0,0,0.1)');
+
+  // UPPER LEGS (thighs - wider)
+  pxRect(ctx,-14,-6,12,6,pants);
+  pxRect(ctx,-14,0,12,6,pants);
+
+  // PELVIS/HIPS (widest part of lower body)
+  pxRect(ctx,-4,-6,8,12,pants);
+
+  // TORSO (trunk - anatomically accurate width, tapers to waist)
+  pxRect(ctx,4,-7+breathY,16,14,shirt);
+  // Chest wider than abdomen
+  pxRect(ctx,4,-7+breathY,16,6,'rgba(255,255,255,0.06)'); // chest highlight
+  pxRect(ctx,4,-1+breathY,16,8,'rgba(0,0,0,0.08)'); // abdomen shadow
+  // Torso contour sides
+  pxRect(ctx,4,-6+breathY,1,12,'rgba(0,0,0,0.2)');
+  pxRect(ctx,19,-6+breathY,1,12,'rgba(0,0,0,0.2)');
+
+  // Breathing chest rise
+  if(isBreathing) {
+    pxRect(ctx,5,-7+breathY,14,5,'rgba(200,230,255,0.18)');
+    if(v.physio==='shock'||v.physio==='hemorrhage') {
+      pxRect(ctx,6,-7+breathY,12,4,'rgba(200,230,255,0.12)');
+    }
+  }
+  if(v.breath==='agonal' && Math.sin(v.breathT*5)>0.4) {
+    pxRect(ctx,4,-8,16,6,'rgba(255,160,100,0.3)');
+  }
+
+  // ARM 1 (near side - lies along body)
+  pxRect(ctx,4,5+breathY*0.3,16,4,shirt);  // upper arm along torso
+  pxRect(ctx,4,9+breathY*0.3,16,4,skin);   // forearm
+  pxRect(ctx,4,12+breathY*0.3,7,4,'#c49464'); // hand
+
+  // ARM 2 (far side - slightly visible above body)
+  pxRect(ctx,6,-10+breathY*0.3,12,3,shirt);
+  pxRect(ctx,6,-12+breathY*0.3,12,3,skin);
+
+  // NECK
+  pxRect(ctx,20,-4+breathY*0.5,5,7,skin);
+  pxRect(ctx,20,-3+breathY*0.5,3,5,'rgba(0,0,0,0.1)'); // neck shadow
+
+  // HEAD (proper skull shape)
+  pxRect(ctx,25,-7+breathY*0.3,14,13,skin);
+  // Skull curvature
+  pxRect(ctx,25,-7+breathY*0.3,14,3,'rgba(0,0,0,0.1)'); // forehead
+  pxRect(ctx,24,-5+breathY*0.3,1,9,'#c49464');  // temple L
+  pxRect(ctx,39,-5+breathY*0.3,1,9,'#c49464');  // temple R
+
+  // HAIR
+  pxRect(ctx,25,-8+breathY*0.3,14,4,isDeceased?'#333':hair);
+  if(v.sex==='f') pxRect(ctx,38,-7+breathY*0.3,1,10,isDeceased?'#333':hair);
+
+  // FACE FEATURES
+  if(!isDeceased) {
+    // Eyes - half open / sunken if critical
+    const eyeOpen = ['shock','hemorrhage','tension_ptx'].includes(v.physio) ? 1 : 2;
+    pxRect(ctx,28,-4+breathY*0.3,3,eyeOpen,'#1a1a1a');
+    pxRect(ctx,33,-4+breathY*0.3,3,eyeOpen,'#1a1a1a');
+    if(eyeOpen===2) { pxRect(ctx,28,-4+breathY*0.3,1,1,'#fff'); pxRect(ctx,33,-4+breathY*0.3,1,1,'#fff'); }
+    // Nose
+    pxRect(ctx,31,-2+breathY*0.3,1,2,'#b0906a');
+    // Mouth - slack/gasping
+    pxRect(ctx,29,0+breathY*0.3,4,1,'#6b3030');
+    if(['shock','hemorrhage'].includes(v.physio)) pxRect(ctx,30,1,2,1,'rgba(100,0,0,0.5)'); // blood lips
+  } else {
+    // Deceased: fixed/glassy eyes, pallor
+    pxRect(ctx,28,-5,3,2,'rgba(180,200,180,0.5)'); // pallor
+    pxRect(ctx,33,-5,3,2,'rgba(180,200,180,0.5)');
+    pxRect(ctx,28,-4,3,1,'#1a1a1a'); // eyes closed/fixed
+    pxRect(ctx,33,-4,3,1,'#1a1a1a');
+    pxRect(ctx,29,0,4,1,'rgba(60,0,0,0.4)'); // cyanotic lips
+    // Lividity (post-mortem pooling) at lowest body points
+    pxRect(ctx,4,10,16,3,'rgba(80,30,40,0.3)');
+  }
+  // EAR
+  pxRect(ctx,24,-3+breathY*0.3,1,5,skin);
+
+  v.injuries.forEach(inj => drawInjuryOnLying(ctx, inj, breathY, isDeceased));
+}
+
+// ── INJURY RENDERING ─────────────────────────────────────────────────
+function drawInjuryOnWalking(ctx, inj, bobY) {
+  const r='#8b0000', br='#6b0000', sc='#e88860', sw='#cc7755', bk='#2c1a0a';
+  switch(inj.type) {
+    case 'abrasion':
+      if(inj.loc==='forehead') {
+        pxRect(ctx,-3,-19+bobY,5,3,sc);
+        pxRect(ctx,-2,-18+bobY,3,2,r);
+        pxRect(ctx,-1,-17+bobY,2,1,'#cc3333');
+      }
+      break;
+    case 'laceration':
+      if(inj.loc==='arm') {
+        // Deep cut on forearm
+        ctx.strokeStyle=r; ctx.lineWidth=S;
+        ctx.beginPath(); ctx.moveTo(-12*S,2*S); ctx.lineTo(-12*S,8*S); ctx.stroke();
+        pxRect(ctx,-13,3+bobY,2,4,br);
+        pxRect(ctx,-12,1+bobY,1,6,r);
+        // Blood drip
+        pxRect(ctx,-13,7+bobY,2,3,br);
+        pxRect(ctx,-13,9+bobY,1,3,br);
+      }
+      break;
+    case 'contusion':
+      if(inj.loc==='face') {
+        pxRect(ctx,4,-16+bobY,3,3,'#4a2060'); // bruise
+        pxRect(ctx,5,-15+bobY,2,2,'#6a3080');
+      }
+      break;
+  }
+}
+
+function drawInjuryOnSitting(ctx, inj, breathY) {
+  const r='#8b0000', br='#6b0000';
+  switch(inj.type) {
+    case 'fracture':
+      if(inj.loc==='leg') {
+        // Deformed right leg
+        pxRect(ctx,2,8,7,6,'#2c3e50');
+        // Angular deformity
+        pxRect(ctx,7,12,4,4,'#2c3e50');
+        // Swelling
+        pxRect(ctx,2,8,8,8,'rgba(200,150,100,0.4)');
+        // Pain localized redness
+        pxRect(ctx,3,9,5,5,'rgba(200,50,50,0.3)');
+      }
+      if(inj.loc==='arm') {
+        pxRect(ctx,9,0,5,14,'#d4a574');
+        pxRect(ctx,11,8,6,4,'rgba(200,150,100,0.5)');
+        // Bone protrusion for open fx
+        pxRect(ctx,13,6,2,2,'#f0ece8');
+        pxRect(ctx,13,5,1,1,'#fff');
+      }
+      break;
+    case 'abrasion':
+      if(inj.loc==='face') {
+        pxRect(ctx,-3,-25+breathY,3,2,'#cc5533');
+        pxRect(ctx,2,-24+breathY,2,2,'#cc5533');
+        pxRect(ctx,-1,-22+breathY,2,2,'#aa3311');
+      }
+      break;
+    case 'laceration':
+      if(inj.loc==='scalp') {
+        pxRect(ctx,-5,-28+breathY,10,3,'#8b0000');
+        pxRect(ctx,-6,-28+breathY,12,2,'#6b0000');
+        // Blood running down face
+        pxRect(ctx,-2,-25+breathY,2,8,'rgba(139,0,0,0.7)');
+        pxRect(ctx,0,-24+breathY,1,6,'rgba(100,0,0,0.5)');
+      }
+      break;
+    case 'contusion':
+      if(inj.loc==='chest') {
+        pxRect(ctx,-6,-10+breathY,12,8,'rgba(80,30,100,0.4)');
+        pxRect(ctx,-4,-9+breathY,8,6,'rgba(100,40,130,0.3)');
+      }
+      break;
+    case 'wound':
+      if(inj.loc==='shoulder') {
+        pxRect(ctx,9,-10,3,4,'#8b0000');
+        pxRect(ctx,8,-11,2,2,'#6b0000');
+        pxRect(ctx,9,-9,4,6,'rgba(139,0,0,0.5)');
+      }
+      break;
+  }
+}
+
+function drawInjuryDebris(ctx, inj, breathY) {
+  const r='#8b0000', br='#6b0000';
+  // Blood smears visible near exposed arms
+  pxRect(ctx,-18,4,6,8,br);
+  pxRect(ctx,-17,6,4,4,r);
+  if(inj.type==='laceration') {
+    pxRect(ctx,-16,2,3,6,r);
+    pxRect(ctx,-17,5,5,4,br);
+  }
+  if(inj.type==='contusion') {
+    pxRect(ctx,-7,-5,14,5,'rgba(80,30,100,0.45)');
+  }
+}
+
+function drawInjuryOnLying(ctx, inj, breathY, isDeceased) {
+  const r='#8b0000', br='#6b0000', dk='#500000';
+  switch(inj.type) {
+    case 'hemorrhage':
+      if(inj.loc==='abdomen') {
+        // Evisceration
+        pxRect(ctx,-8,-3+breathY,16,8,'#cc3333');
+        pxRect(ctx,-6,-2+breathY,12,6,'#dd5544');
+        pxRect(ctx,-4,-1+breathY,8,5,'#eebb99'); // bowel
+        pxRect(ctx,-3,0+breathY,6,3,'#ddaa88');
+        pxRect(ctx,-5,-3+breathY,4,8,r); // blood
+        pxRect(ctx,2,-2+breathY,3,6,br);
+      }
+      if(inj.loc==='thigh') {
+        pxRect(ctx,-22,-1,8,6,r);
+        pxRect(ctx,-24,-2,6,8,br);
+        pxRect(ctx,-26,0,5,5,dk);
+        // Blood pool
+        pxRect(ctx,-26,4,10,4,'rgba(80,0,0,0.7)');
+      }
+      break;
+    case 'burn':
+      if(inj.loc==='torso') {
+        // Charred/raw burn appearance
+        pxRect(ctx,-14,-5+breathY,28,10,'#3d2010');
+        pxRect(ctx,-12,-4+breathY,24,8,'#c87040');
+        pxRect(ctx,-10,-3+breathY,8,5,'#dd8855'); // raw areas
+        pxRect(ctx,2,-3+breathY,8,5,'#dd8855');
+        pxRect(ctx,-8,-5+breathY,6,3,'#2a1008'); // char areas
+        pxRect(ctx,4,-4+breathY,5,3,'#2a1008');
+        // Blistering
+        pxRect(ctx,-5,-2+breathY,3,3,'rgba(255,220,180,0.8)');
+        pxRect(ctx,3,0+breathY,3,3,'rgba(255,220,180,0.8)');
+      }
+      if(inj.loc==='face') {
+        pxRect(ctx,12,-7+breathY*0.3,14,13,'#a05020');
+        pxRect(ctx,13,-6+breathY*0.3,12,10,'#c07040');
+        pxRect(ctx,14,-5+breathY*0.3,4,4,'#2a1008'); // char
+      }
+      break;
+    case 'head':
+      if(inj.loc==='skull') {
+        // Depressed fracture
+        pxRect(ctx,14,-8+breathY*0.3,6,6,'#aa4422');
+        pxRect(ctx,15,-7+breathY*0.3,4,4,'#cc3311');
+        pxRect(ctx,16,-6,3,3,'#880000');
+        // Swelling
+        pxRect(ctx,12,-9+breathY*0.3,8,4,'rgba(180,60,60,0.5)');
+        // Blood running
+        pxRect(ctx,16,-4+breathY*0.3,2,6,'rgba(139,0,0,0.8)');
+        if(isDeceased) {
+          // Brain matter visualization (tasteful but clear)
+          pxRect(ctx,13,-9,8,4,'#cc8866');
+          pxRect(ctx,14,-10,6,3,'#ddaa99');
+        }
+      }
+      break;
+    case 'pneumothorax':
+    case 'rib':
+      if(inj.loc==='chest') {
+        // Chest asymmetry, tracheal deviation
+        pxRect(ctx,-8,-5+breathY,8,8,'#aa4433');
+        pxRect(ctx,0,-5+breathY,8,8,'#8b5566'); // contralateral
+        // Rib bruising
+        pxRect(ctx,2,-4+breathY,6,6,'rgba(100,40,120,0.45)');
+        pxRect(ctx,3,-3+breathY,4,4,'rgba(130,50,150,0.4)');
+        // Subcutaneous emphysema bubbles
+        pxRect(ctx,-2,-6+breathY,3,3,'rgba(220,220,255,0.5)');
+        pxRect(ctx,5,-5+breathY,2,2,'rgba(220,220,255,0.5)');
+      }
+      break;
+    case 'crush':
+      // Massive chest crush
+      pxRect(ctx,-16,-6+breathY,32,12,'#3d1010');
+      pxRect(ctx,-14,-5+breathY,28,10,'#883333');
+      pxRect(ctx,-12,-4+breathY,24,8,'#aa4444');
+      pxRect(ctx,-10,-3+breathY,6,6,'rgba(80,0,0,0.8)');
+      pxRect(ctx,2,-3+breathY,6,6,'rgba(80,0,0,0.8)');
+      break;
+    case 'multiple':
+      // Multiple wound indicators
+      [['-14','-3'],['-2','-5'],['4','-2'],['10','-4']].forEach(([x,y]) => {
+        pxRect(ctx,parseInt(x)+breathY*0,parseInt(y),3,3,r);
+      });
+      break;
+  }
+}
+
+// ── PLAYER DRAWING ────────────────────────────────────────────────────
+function drawPlayer(ctx, ts) {
+  const p = G.player;
+  drawRespCharacter(ctx, p.x, p.y, p.dir, p.frame, ts);
+
+  // Proximity aura
+  if(G.nearV) {
+    ctx.save();
+    ctx.globalAlpha = .3 + Math.sin(ts*.008)*.15;
+    ctx.strokeStyle='#1ab8a0'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(p.x, p.y, 36, 0, Math.PI*2); ctx.stroke();
+    ctx.restore();
+  }
+}
+
+// ── MINIMAP ────────────────────────────────────────────────────────────
+function drawMinimap(ts) {
+  const mm = G.mmCtx;
+  if(!mm) return;
+  const mW = 130, mH = 96;
+  const sx = mW/G.mapW, sy = mH/G.mapH;
+  mm.clearRect(0,0,mW,mH);
+  mm.fillStyle='rgba(5,10,18,0.9)'; mm.fillRect(0,0,mW,mH);
+  // Grid
+  mm.strokeStyle='rgba(26,184,160,.08)'; mm.lineWidth=.5;
+  for(let x=0;x<mW;x+=18){mm.beginPath();mm.moveTo(x,0);mm.lineTo(x,mH);mm.stroke();}
+  // Victims
+  const tc={red:'#e74c3c',yellow:'#f39c12',green:'#27ae60',black:'#5d6d7e'};
+  G.victims.forEach(v=>{
+    mm.fillStyle=v.assessed?(tc[v.tagged]||'#888'):'rgba(255,220,50,.8)';
+    mm.beginPath();mm.arc(v.x*sx,v.y*sy,2.5,0,Math.PI*2);mm.fill();
+  });
+  // Player
+  const px=G.player.x*sx, py=G.player.y*sy;
+  mm.fillStyle='#f5a623';mm.beginPath();mm.arc(px,py,4,0,Math.PI*2);mm.fill();
+  mm.strokeStyle='#fff';mm.lineWidth=1;mm.stroke();
+  // Viewport
+  mm.strokeStyle='rgba(26,184,160,.4)';mm.lineWidth=.5;
+  mm.strokeRect(G.camX*sx,G.camY*sy,G.W*sx,(G.H)*sy);
+}
+
+// ── DIALOGUE SYSTEM ──────────────────────────────────────────────────
+let dlgTypingInterval = null;
+let dlgFullText = '';
+let dlgCurrentText = '';
+let dlgCharIdx = 0;
+
+function openDialogue(v) {
+  if(!v.dialogues||v.dialogues.length===0) { openAP(v); return; }
+  const dlg = v.dialogues[v.dlgIdx % v.dialogues.length];
+  G.activeV = v; G.paused = true;
+  document.getElementById('dlg-wrap').style.display='block';
+  document.getElementById('dlg-name').textContent = v.name;
+  document.getElementById('dlg-responses').style.display='none';
+  document.getElementById('dlg-next').style.display='block';
+  document.getElementById('dlg-responses').innerHTML='';
+
+  // Draw portrait
+  const pc = document.getElementById('dlg-pc');
+  drawPortrait(pc, v);
+
+  // Type out text
+  startTyping(dlg.text, () => {
+    // Show responses
+    document.getElementById('dlg-next').style.display='none';
+    const resp = document.getElementById('dlg-responses');
+    resp.style.display='flex';
+    dlg.responses.forEach((r,i) => {
+      const btn = document.createElement('button');
+      btn.className='dlg-resp';
+      btn.textContent = (i+1)+'. '+r.text;
+      btn.onclick = () => handleDlgResponse(r, v, dlg);
+      resp.appendChild(btn);
+    });
+  });
+}
+
+function startTyping(text, onComplete) {
+  dlgFullText = text; dlgCurrentText = ''; dlgCharIdx = 0;
+  if(dlgTypingInterval) clearInterval(dlgTypingInterval);
+  const el = document.getElementById('dlg-text');
+  dlgTypingInterval = setInterval(() => {
+    if(dlgCharIdx < dlgFullText.length) {
+      dlgCurrentText += dlgFullText[dlgCharIdx++];
+      el.textContent = dlgCurrentText;
+    } else {
+      clearInterval(dlgTypingInterval);
+      if(onComplete) onComplete();
+    }
+  }, 28);
+}
+
+function advanceDlg() {
+  if(dlgCharIdx < dlgFullText.length) {
+    // Skip typing
+    clearInterval(dlgTypingInterval);
+    dlgCharIdx = dlgFullText.length;
+    document.getElementById('dlg-text').textContent = dlgFullText;
+  }
+}
+
+function handleDlgResponse(r, v, dlg) {
+  document.getElementById('dlg-wrap').style.display='none';
+  v.dlgDone = true;
+
+  // Feedback on response correctness
+  const fbp = document.getElementById('fbp');
+  const isOk = r.correct;
+  SFX[isOk?'ok':'fail']();
+
+  document.getElementById('fpi').className='fpi '+(isOk?'fpc':'fpw');
+  document.getElementById('fpi').textContent = isOk?'✓':'✗';
+  document.getElementById('fptit').className='fptit '+(isOk?'ftc':'ftw');
+  document.getElementById('fptit').textContent = isOk?'Correct Response!':'Suboptimal Response';
+  document.getElementById('fpsub').textContent = v.name+' · Communication';
+  document.getElementById('fpr').textContent = r.why;
+  document.getElementById('fpd').textContent = isOk?'Good therapeutic communication in MCI.':'Review communication priorities in mass casualty events.';
+  fbp.style.display='flex';
+  fbp.dataset.afterDlg='1';
+}
+
+function dismissFB() {
+  const fbp = document.getElementById('fbp');
+  const wasAfterDlg = fbp.dataset.afterDlg==='1';
+  fbp.style.display='none';
+  fbp.dataset.afterDlg='';
+
+  if(wasAfterDlg && G.activeV) {
+    openAP(G.activeV);
+  }
+}
+
+// ── PORTRAIT RENDERING ────────────────────────────────────────────────
+function drawPortrait(canvas, v) {
+  const ctx2 = canvas.getContext('2d');
+  ctx2.imageSmoothingEnabled=false;
+  const W=120, H=140;
+  ctx2.clearRect(0,0,W,H);
+
+  // BG - neutral
+  ctx2.fillStyle = '#1a2535';
+  ctx2.fillRect(0,0,W,H);
+
+  // Neutral border - no color hint
+  ctx2.strokeStyle = '#445566';
+  ctx2.lineWidth=2; ctx2.strokeRect(2,2,W-4,H-4);
+
+  // Draw portrait face & bust
+  const ps = 2; // portrait pixel scale
+  const pxP = (x,y,c) => { ctx2.fillStyle=c; ctx2.fillRect(x*ps,y*ps,ps,ps); };
+  const rx = (x,y,w,h,c) => { ctx2.fillStyle=c; ctx2.fillRect(x*ps,y*ps,w*ps,h*ps); };
+
+  // Torso
+  const shirtCol = {green:'#5d8aa8',yellow:'#8b6b3d',red:'#8b3a2a',black:'#2a2a2a'}[v.cat];
+  rx(8,32,44,36, shirtCol);
+  // Neck
+  rx(24,26,12,8,'#d4a574');
+  // Skin tone varies by sex
+  const skinCol = v.sex==='m' ? '#d4a574' : '#e0b898';
+  const hairColP = v.age==='elderly' ? '#aaaaaa' : (v.sex==='m' ? '#3a2010' : '#8b4513');
+
+  // HEAD - anatomically proportioned (1/7 body)
+  rx(16,6,28,22,skinCol);   // head oval
+  // Skull curvature
+  rx(16,6,28,4,'rgba(0,0,0,0.12)');  // forehead shadow
+  rx(16,7,2,16,'#c49464');  // left side
+  rx(42,7,2,16,'#c49464');  // right side
+  rx(17,26,26,2,'#c49464'); // jaw line
+  // Chin
+  rx(20,27,20,2,skinCol);
+
+  // HAIR on top of head
+  rx(16,4,28,8,hairColP);
+  if(v.sex==='f') { rx(14,8,4,20,hairColP); rx(42,8,4,20,hairColP); }  // long hair sides
+  if(v.age==='elderly') rx(16,4,28,4,'#cccccc'); // lighter top
+
+  // EYEBROWS (placed 1/3 from top of face)
+  rx(20,12,6,2,hairColP); rx(34,12,6,2,hairColP);
+
+  // EYES - with whites and iris, anatomically placed
+  rx(20,14,7,5,'#e8e8e8');  // eye white L
+  rx(34,14,7,5,'#e8e8e8');  // eye white R
+  // Iris
+  const eyeState = v.physio==='deceased' ? 'closed' : (v.physio==='shock'||v.physio==='hemorrhage') ? 'half' : 'open';
+  if(eyeState==='open') {
+    rx(22,14,3,4,'#4a3010'); rx(23,15,2,2,'#1a1a1a'); pxP(24,15,'#fff');
+    rx(36,14,3,4,'#4a3010'); rx(37,15,2,2,'#1a1a1a'); pxP(38,15,'#fff');
+  } else if(eyeState==='half') {
+    rx(20,16,7,2,'#c8a882'); rx(22,14,3,4,'#4a3010'); rx(23,15,2,2,'#1a1a1a');
+    rx(34,16,7,2,'#c8a882'); rx(36,14,3,4,'#4a3010');
+  } else {
+    rx(20,16,7,2,skinCol); rx(34,16,7,2,skinCol); // eyes closed
+  }
+
+  // NOSE - anatomically centered, 3D
+  rx(27,18,6,4,'rgba(0,0,0,0.15)');  // nose shadow
+  rx(27,20,2,3,skinCol); rx(31,20,2,3,skinCol); // nostrils
+  pxP(29,18,'#b0906a'); pxP(30,18,'#b0906a'); // nose bridge
+
+  // MOUTH expression based on condition
+  if(v.physio==='stable') {
+    rx(24,24,12,2,'#8b5a5a'); rx(25,24,10,1,'#cc6666');
+  } else if(v.physio==='deteriorating') {
+    rx(22,24,16,2,'#7a4040'); rx(23,25,14,1,'#cc4444'); rx(22,24,3,1,'#4a2020');
+  } else if(v.physio==='deceased') {
+    rx(25,24,10,2,'rgba(60,0,0,0.5)'); rx(27,26,6,1,'#1a0a0a'); // cyanotic
+  } else {
+    rx(24,24,12,3,'#6a3030'); rx(26,25,8,2,'#3a1010'); // slack/semi-open
+  }
+
+  // EARS
+  rx(14,14,4,8,skinCol); rx(42,14,4,8,skinCol);
+  rx(14,15,2,6,'#c49464'); rx(44,15,2,6,'#c49464');
+
+  // Arms visible
+  rx(4,32,6,30,'#d4a574'); // left arm
+  rx(50,32,6,30,'#d4a574');
+
+  // Injuries on portrait
+  v.injuries.forEach(inj => {
+    if(inj.loc==='forehead'||inj.loc==='face'||inj.loc==='scalp'||inj.loc==='head') {
+      drawPortraitFaceInjury(ctx2, ps, inj.type, v.cat);
+    }
+    if(inj.loc==='chest'||inj.loc==='torso'||inj.loc==='abdomen') {
+      drawPortraitBodyInjury(ctx2, ps, inj.type, v.cat);
+    }
+    if(inj.loc==='arm') {
+      // Blood on arm
+      rx(4,44,5,6,'#8b0000'); rx(5,46,3,4,'rgba(139,0,0,0.6)'.replace('rgba(','').replace(')',''));
+      ctx2.fillStyle='#8b0000'; ctx2.fillRect(4*ps,44*ps,5*ps,6*ps);
+    }
+    if(inj.loc==='skull') {
+      ctx2.fillStyle='#8b0000'; ctx2.fillRect(22*ps,6*ps,10*ps,4*ps);
+      ctx2.fillStyle='#6b0000'; ctx2.fillRect(24*ps,4*ps,6*ps,3*ps);
+    }
+  });
+
+  // No triage color banner - don't hint at category
+  ctx2.fillStyle='#1a2332'; ctx2.fillRect(2,H-22,W-4,20);
+  ctx2.fillStyle='#7a8fa6'; ctx2.font='bold 8px "Press Start 2P",monospace';
+  ctx2.textAlign='center'; ctx2.fillText('PATIENT',W/2,H-8);
+}
+
+function drawPortraitFaceInjury(ctx, ps, type, cat) {
+  const rx = (x,y,w,h,c) => { ctx.fillStyle=c; ctx.fillRect(x*ps,y*ps,w*ps,h*ps); };
+  switch(type) {
+    case 'abrasion': rx(20,12,4,3,'#cc5533'); rx(32,13,3,2,'#cc4422'); break;
+    case 'laceration': rx(18,10,14,3,'#8b0000'); rx(20,9,10,2,'#cc2222'); break;
+    case 'contusion': rx(22,12,8,6,'#4a2060'); rx(23,13,6,4,'#6a3080'); break;
+    case 'burn': rx(18,8,24,20,'#a05020'); rx(20,10,20,16,'#c07040'); rx(22,9,4,4,'#2a1008'); break;
+    case 'head': rx(22,6,14,8,'#8b0000'); rx(23,5,12,4,'#6b0000'); rx(24,4,8,3,'#500000'); break;
+  }
+}
+
+function drawPortraitBodyInjury(ctx, ps, type, cat) {
+  const rx = (x,y,w,h,c) => { ctx.fillStyle=c; ctx.fillRect(x*ps,y*ps,w*ps,h*ps); };
+  switch(type) {
+    case 'hemorrhage': rx(14,38,32,20,'#8b0000'); rx(16,40,28,16,'#cc2222'); rx(18,42,12,10,'#ddaa88'); break;
+    case 'burn': rx(10,34,40,28,'#3d2010'); rx(12,36,36,24,'#c87040'); rx(14,38,10,8,'#2a1008'); break;
+    case 'contusion': rx(16,36,28,16,'rgba(80,30,100,0.6)'.replace('rgba(','').replace(')',''));
+      ctx.fillStyle='rgba(80,30,100,0.6)'; ctx.fillRect(16*ps,36*ps,28*ps,16*ps); break;
+    case 'pneumothorax': rx(14,36,16,16,'#aa4433'); rx(30,36,16,16,'#8b5566'); break;
+    case 'crush': rx(10,34,40,28,'#3d1010'); rx(12,36,36,24,'#883333'); break;
+  }
+}
+
+// ── ASSESS PANEL ──────────────────────────────────────────────────────
+function openAP(v) {
+  G.activeV = v; G.paused = true;
+  document.getElementById('apn').textContent = v.name;
+  document.getElementById('ap-sub').innerHTML='';
+  document.getElementById('vrr').textContent = v.rrR ? v.rr : '?';
+  document.getElementById('vpr').textContent = v.prR ? v.pr : '?';
+  document.getElementById('vcr').textContent = v.crR ? v.cr.toFixed(1)+'s' : '?';
+  document.getElementById('ap').style.display='flex';
+  document.getElementById('tp').style.display='none';
+}
+
+function closeAP() {
+  document.getElementById('ap').style.display='none';
+  document.getElementById('tp').style.display='none';
+  G.activeV=null; G.paused=false;
+}
+
+function doBreath() {
+  const v = G.activeV;
+  document.getElementById('ap-sub').innerHTML=`
+    <div class="ap-sub">
+      <div class="apst">Breathing Assessment</div>
+      <div class="apsb" onclick="startRR()">🫁 Count Respirations (15s)</div>
+      <div class="apsb" onclick="showAirway()">🫀 Reposition Airway</div>
+    </div>`;
+}
+
+function startRR() {
+  const v = G.activeV;
+  document.getElementById('ap').style.display='none';
+  SFX.breath(v.breath==='normal'?'normal':v.breath==='labored'?'labored':'normal');
+  showAnim('Count Respirations','🫁',`Watch chest movement · ${v.name} · ${v.breath.toUpperCase()}`,15,()=>showRRInput(v));
+}
+
+function showRRInput(v) {
+  document.getElementById('ap').style.display='flex';
+  document.getElementById('ap-sub').innerHTML=`
+    <div class="ap-sub">
+      <div class="apst">Enter Respiration Rate (×2 for /min)</div>
+      <div style="font-size:12px;color:#7a8fa6;margin-bottom:6px">Pattern: <b style="color:#1ab8a0">${v.breath}</b></div>
+      <div class="ap-inp-row">
+        <input type="number" class="ap-inp" id="rri" min="0" max="60" placeholder="RR">
+        <span style="font-size:13px;color:#7a8fa6">/min</span>
+        <button class="ap-cfm" onclick="confirmRR()">Confirm</button>
+      </div>
+      <div id="rrf" style="margin-top:6px;font-size:13px;font-family:'VT323',monospace"></div>
+    </div>`;
+}
+
+function confirmRR() {
+  const v=G.activeV; const inp=parseInt(document.getElementById('rri').value);
+  if(isNaN(inp)) return;
+  const ok=Math.abs(inp-v.rr)<=5;
+  v.rrR=true; document.getElementById('vrr').textContent=v.rr;
+  document.getElementById('rrf').innerHTML=ok
+    ?`<span style="color:#2ecc71">✓ RR ${v.rr}/min (${v.breath})</span>`
+    :`<span style="color:#f5a623">Actual: ${v.rr}/min. You: ${inp}/min</span>`;
+  SFX[ok?'ok':'warn']();
+  elog(`RR assessed: ${inp}/min — ${v.name}`);
+}
+
+function showAirway() {
+  const v=G.activeV;
+  document.getElementById('ap-sub').innerHTML=`
+    <div class="ap-sub">
+      <div class="apst">Airway Maneuver</div>
+      <div class="apsb" onclick="doManeuver('jaw')">✋ Jaw-Thrust (Trauma)</div>
+      <div class="apsb" onclick="doManeuver('htcl')">👋 Head Tilt–Chin Lift (Medical)</div>
+    </div>`;
+}
+
+function doManeuver(type) {
+  const v=G.activeV;
+  document.getElementById('ap').style.display='none';
+  const isTrauma=['mvc','quake','explode','train','violence'].includes(G.scenario.id);
+  const ok = (type==='jaw')===isTrauma;
+  const label=type==='jaw'?'Jaw-Thrust Maneuver':'Head Tilt–Chin Lift';
+  showAnim(label,'🫀',`Performing on ${v.name}`,3,()=>{
+    document.getElementById('ap').style.display='flex';
+    SFX[ok?'ok':'fail']();
+    document.getElementById('ap-sub').innerHTML=`
+      <div class="ap-sub">
+        <div style="font-size:13px;color:${ok?'#2ecc71':'#e74c3c'};padding:6px 0">
+          ${ok?'✓ Correct. ':'⚠ Incorrect. '}
+          ${isTrauma?'Jaw-Thrust protects C-spine in trauma. Head Tilt–Chin Lift risks spinal injury.':'Head Tilt–Chin Lift appropriate here. Jaw-Thrust reserved for trauma with C-spine risk.'}
+        </div>
+      </div>`;
+    elog(`Airway: ${label} — ${v.name}`);
+  });
+}
+
+function doPulse() {
+  document.getElementById('ap-sub').innerHTML=`
+    <div class="ap-sub">
+      <div class="apst">Pulse Assessment</div>
+      <div class="apsb" onclick="startPulse('carotid')">🫀 Carotid Pulse (Central)</div>
+      <div class="apsb" onclick="startPulse('radial')">✋ Radial Pulse (Peripheral)</div>
+    </div>`;
+}
+
+function startPulse(site) {
+  const v=G.activeV;
+  document.getElementById('ap').style.display='none';
+  if(v.pr>0) SFX.heartbeat(v.pr);
+  showAnim(`${site==='carotid'?'Carotid':'Radial'} Pulse`,'❤️',`Palpating ${site} pulse · ${v.name} · ${v.pulse}`,15,()=>showPRInput(v,site));
+}
+
+function showPRInput(v,site) {
+  document.getElementById('ap').style.display='flex';
+  document.getElementById('ap-sub').innerHTML=`
+    <div class="ap-sub">
+      <div class="apst">Pulse Rate (×4 = /min)</div>
+      <div style="font-size:12px;color:#7a8fa6;margin-bottom:6px">Site: <b style="color:#1ab8a0">${site}</b> · Quality: <b style="color:#1ab8a0">${v.pulse}</b></div>
+      <div class="ap-inp-row">
+        <input type="number" class="ap-inp" id="pri" min="0" max="300" placeholder="PR">
+        <span style="font-size:13px;color:#7a8fa6">/min</span>
+        <button class="ap-cfm" onclick="confirmPR('${site}')">Confirm</button>
+      </div>
+      <div id="prf" style="margin-top:6px;font-size:13px;font-family:'VT323',monospace"></div>
+    </div>`;
+}
+
+function confirmPR(site) {
+  const v=G.activeV; const inp=parseInt(document.getElementById('pri').value);
+  if(isNaN(inp)) return;
+  v.prR=true; document.getElementById('vpr').textContent=v.pr;
+  const ok=v.pulse!=='absent'&&Math.abs(inp-v.pr)<=10;
+  document.getElementById('prf').innerHTML=v.pulse==='absent'
+    ?`<span style="color:#e74c3c">⚠ No pulse detected. Immediate intervention.</span>`
+    :ok?`<span style="color:#2ecc71">✓ ${v.pr}/min · ${v.pulse}</span>`
+        :`<span style="color:#f5a623">Actual: ${v.pr}/min. You: ${inp}</span>`;
+  SFX[ok?'ok':'warn']();
+  elog(`Pulse (${site}): ${inp}/min — ${v.name}`);
+}
+
+function doCRT() {
+  const v=G.activeV;
+  document.getElementById('ap').style.display='none';
+  showAnim('Capillary Refill Test','💉',`Applying nail bed pressure · ${v.name}`,5,()=>{
+    document.getElementById('ap').style.display='flex';
+    v.crR=true; document.getElementById('vcr').textContent=v.cr.toFixed(1)+'s';
+    const ok=v.cr<=2;
+    SFX[ok?'ok':'warn']();
+    document.getElementById('ap-sub').innerHTML=`
+      <div class="ap-sub">
+        <div style="font-size:14px;padding:6px 0;color:${ok?'#2ecc71':'#e74c3c'}">
+          ${v.cr.toFixed(1)}s — ${ok?'✓ Normal perfusion':'⚠ Delayed — impaired perfusion'}
+        </div>
+        <div style="font-size:12px;color:#7a8fa6">${ok?'CRT ≤ 2s: adequate peripheral perfusion.':'CRT > 2s: shock, dehydration, or peripheral vascular compromise.'}</div>
+      </div>`;
+    elog(`CRT: ${v.cr.toFixed(1)}s — ${v.name}`);
+  });
+}
+
+function doAVPU() {
+  const v=G.activeV;
+  document.getElementById('ap-sub').innerHTML=`
+    <div class="ap-sub">
+      <div class="apst">AVPU Mental Status</div>
+      ${['A — Alert','V — Voice response','P — Pain response','U — Unresponsive'].map((t,i)=>{
+        const k=['A','V','P','U'][i];
+        return `<div class="apsb" onclick="selectAVPU('${k}')">${['👁️','👂','🤜','😶'][i]} ${t}</div>`;
+      }).join('')}
+    </div>`;
+}
+
+function selectAVPU(lv) {
+  const v=G.activeV; const ok=lv===v.avpu;
+  v.avpuR=true; SFX[ok?'ok':'warn']();
+  const desc={A:'Alert: awake, oriented, responsive.',V:'Voice: responds only to verbal stimulus.',P:'Pain: responds only to painful stimulus.',U:'Unresponsive: no response to any stimulus.'};
+  document.getElementById('ap-sub').innerHTML=`
+    <div class="ap-sub">
+      <div style="font-size:14px;color:${ok?'#2ecc71':'#e74c3c'};padding:5px 0">
+        ${ok?'✓':'✗'} Selected: <b>${lv}</b> · Correct: <b>${v.avpu}</b>
+      </div>
+      <div style="font-size:12px;color:#7a8fa6;margin-top:5px">${desc[v.avpu]}</div>
+      <div style="font-size:11px;color:#7a8fa6;margin-top:6px">AVPU ≠ A → at minimum YELLOW (Delayed) in START triage.</div>
+    </div>`;
+  elog(`AVPU: ${lv} (correct: ${v.avpu}) — ${v.name}`);
+}
+
+function showTP() {
+  document.getElementById('ap').style.display='none';
+  document.getElementById('tp').style.display='flex';
+}
+function closeTP() { document.getElementById('tp').style.display='none'; document.getElementById('ap').style.display='flex'; }
+
+function assignTag(tag) {
+  const v=G.activeV;
+  const correctTag = v.correct || v.cat;
+  const ok=tag===correctTag;
+  v.tagged=tag; v.assessed=true; G.assessed++;
+  if(ok) G.score++;
+  G.scoreLog.push({v,tag,ok,correctTag});
+  G.assessLog.push({name:v.name,assigned:tag,correct:correctTag,ok});
+  document.getElementById('tp').style.display='none';
+  document.getElementById('ap').style.display='none';
+  G.activeV=null; G.paused=false;
+  showTagFeedback(v,tag,ok);
+  elog(`Tagged ${tag.toUpperCase()}: ${v.name} — ${ok?'CORRECT':'INCORRECT'}`);
+}
+
+function showTagFeedback(v,tag,ok) {
+  const correctTag = v.correct || v.cat;
+  const labels={red:'IMMEDIATE',yellow:'DELAYED',green:'MINOR',black:'EXPECTANT/DECEASED'};
+  const rationale={
+    red:'RED: Life-threatening survivable injuries. RR > 30, absent radial pulse, or altered mental status. Intervene now.',
+    yellow:'YELLOW: Serious but stable. Patient can tolerate delay. Monitor closely for deterioration.',
+    green:'GREEN: Walking wounded. Minor injuries. Normal RR, pulse present, AVPU = Alert.',
+    black:'BLACK: Unsurvivable injuries OR apneic after airway repositioning. Comfort only. Allocate resources elsewhere.'
+  };
+  const fb=document.getElementById('fbp');
+  document.getElementById('fpi').className='fpi '+(ok?'fpc':'fpw');
+  document.getElementById('fpi').textContent=ok?'✓':'✗';
+  document.getElementById('fptit').className='fptit '+(ok?'ftc':'ftw');
+  document.getElementById('fptit').textContent=ok?'Correct Triage!':'Incorrect Triage';
+  document.getElementById('fpsub').textContent=`${v.name} · Assessment complete`;
+  document.getElementById('fpr').innerHTML=ok
+    ?`<b>${labels[correctTag]}</b> was correct. ${rationale[correctTag]}`
+    :`You assigned <b>${labels[tag]}</b>. Correct category: <b>${labels[correctTag]}</b>. ${rationale[correctTag]}`;
+  document.getElementById('fpd').textContent=`RR:${v.rr} · PR:${v.pr} · CRT:${v.cr.toFixed(1)}s · AVPU:${v.avpu} · Breathing:${v.breath}`;
+  fb.style.display='flex';
+}
+
+// ── ANIMATION OVERLAY ─────────────────────────────────────────────────
+function showAnim(label, emoji, hint, duration, cb) {
+  const ov=document.getElementById('aov');
+  document.getElementById('aol').textContent=label;
+  document.getElementById('aovis').textContent=emoji;
+  document.getElementById('aoh').textContent=hint;
+  document.getElementById('aoc').textContent='0';
+  document.getElementById('aopbf').style.width='0%';
+  ov.style.display='flex';
+  let el=0,ct=0;
+  const iv=setInterval(()=>{
+    el+=.5; ct+=.5;
+    document.getElementById('aopbf').style.width=Math.min(100,el/duration*100)+'%';
+    document.getElementById('aoc').textContent=ct.toFixed(1);
+    if(el>=duration){ clearInterval(iv); ov.style.display='none'; if(cb)cb(); }
+  },500);
+}
+
+// ── RADIO ─────────────────────────────────────────────────────────────
+function pushRadio() {
+  const msg=RADIO_MSGS[G.radioIdx%RADIO_MSGS.length]; G.radioIdx++;
+  const container=document.getElementById('rlm');
+  const el=document.createElement('div');
+  el.className='rlmsg '+(msg.type||'');
+  el.textContent='» '+msg.text;
+  container.insertBefore(el,container.firstChild);
+  while(container.children.length>3) container.removeChild(container.lastChild);
+  SFX.static();
+}
+
+function elog(t) { document.getElementById('elog').textContent=t; }
+
+// ── ANALYTICS ─────────────────────────────────────────────────────────
+function showAnalytics() {
+  document.getElementById('analytics').style.display='flex';
+  document.getElementById('game-area').style.display='none';
+  const tot=G.assessed, cor=G.score, pct=tot>0?Math.round(cor/tot*100):0;
+  const over=G.scoreLog.filter(h=>h.tag==='red'&&h.v.correct!=='red').length;
+  const under=G.scoreLog.filter(h=>h.v.correct==='red'&&h.tag!=='red').length;
+  const miss=G.scoreLog.filter(h=>h.v.correct==='red'&&h.tag==='green').length;
+  const m=Math.floor(G.elapsed/60),s=Math.floor(G.elapsed%60);
+  const tStr=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  document.getElementById('dash-sub').textContent=`${G.scenario.name} · Level ${G.scenario.level} · ${tStr}`;
+  document.getElementById('dg').innerHTML=`
+    <div class="dc"><div class="dcl">Score</div><div class="dcv ${pct>=80?'vg':pct>=60?'va':'vr'}">${pct}%</div></div>
+    <div class="dc"><div class="dcl">Correct</div><div class="dcv vt">${cor}/${tot}</div></div>
+    <div class="dc"><div class="dcl">Overtriage</div><div class="dcv ${over>0?'va':'vw'}">${over}</div></div>
+    <div class="dc"><div class="dcl">Undertriage</div><div class="dcv ${under>0?'vr':'vw'}">${under}</div></div>
+    <div class="dc"><div class="dcl">Missed Critical</div><div class="dcv ${miss>0?'vr':'vg'}">${miss}</div></div>
+    <div class="dc"><div class="dcl">Time</div><div class="dcv vt">${tStr}</div></div>`;
+  const tc={red:'#e74c3c',yellow:'#f39c12',green:'#27ae60',black:'#5d6d7e'};
+  document.getElementById('dpl').innerHTML=G.assessLog.map(p=>`
+    <div class="plr">
+      <div class="plrt" style="background:${tc[p.assigned]||'#888'}"></div>
+      <div class="plri"><div class="plrn">${p.name}</div><div class="plrd">${p.assigned.toUpperCase()} → correct: ${p.correct.toUpperCase()}</div></div>
+      <div class="plrr ${p.ok?'rc':'rw'}">${p.ok?'✓':'✗'}</div>
+    </div>`).join('');
+  document.getElementById('perf').textContent = pct>=90
+    ?`Exceptional. ${pct}% accuracy demonstrates mastery of START triage. Zero missed criticals and rapid response show readiness for MCI deployment.`
+    :pct>=70?`Good performance (${pct}%). ${under>0?`Undertriage errors: ${under} — RED patients were missed. In real MCI, undertriage = preventable death. `:''}Review START criteria: RR>30, absent radial pulse, or AVPU≠A → RED.`
+    :`Needs improvement (${pct}%). Key reminders: (1) Apneic after repositioning = BLACK. (2) RR>30 = RED. (3) No radial pulse = RED. (4) AVPU≠Alert = RED. ${miss>0?`CRITICAL: ${miss} patient(s) with life-threatening injuries tagged GREEN — preventable mortality in a real event.`:''}`;
+}
+
+function toMenu() {
+  G.running=false; G.ran=false; SFX.siren(false);
+  document.getElementById('analytics').style.display='none';
+  document.getElementById('game-area').style.display='none';
+  document.getElementById('title-screen').style.display='flex';
+  closeAP();
+  document.getElementById('fbp').style.display='none';
+  document.getElementById('dlg-wrap').style.display='none';
+  document.getElementById('prox').style.display='none';
+  if(document.getElementById('confirm-menu')) document.getElementById('confirm-menu').remove();
+}
+function confirmReturnMenu() {
+  const existing = document.getElementById('confirm-menu');
+  if(existing) { existing.remove(); return; }
+  const d = document.createElement('div');
+  d.id='confirm-menu';
+  d.style.cssText='position:absolute;left:50%;top:60px;transform:translateX(-50%);background:rgba(5,10,18,.98);border:1px solid #e74c3c;border-radius:8px;padding:20px 24px;z-index:999;text-align:center;min-width:260px;pointer-events:all;';
+  d.innerHTML=`<div style="font-family:'Press Start 2P',monospace;font-size:10px;color:#fff;margin-bottom:14px">Return to Main Menu?</div>
+    <div style="font-size:13px;color:#7a8fa6;font-family:'VT323',monospace;margin-bottom:16px">Current progress will be lost.</div>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <button onclick="toMenu()" style="background:#e74c3c;border:none;color:#fff;padding:8px 18px;border-radius:4px;font-family:'Press Start 2P',monospace;font-size:8px;cursor:pointer;">Yes, Exit</button>
+      <button onclick="document.getElementById('confirm-menu').remove()" style="background:transparent;border:1px solid rgba(26,184,160,.4);color:#1ab8a0;padding:8px 18px;border-radius:4px;font-family:'Press Start 2P',monospace;font-size:8px;cursor:pointer;">Cancel</button>
+    </div>`;
+  document.getElementById('game-area').appendChild(d);
+}
+
+// ── INPUT ─────────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  G.keys[e.key]=true;
+  if(e.key==='e'||e.key==='E') {
+    if(G.dlgState.active) { advanceDlg(); return; }
+    if(G.nearV&&!G.activeV&&!G.paused) {
+      if(G.nearV.dlgDone||(G.nearV.dialogues&&G.nearV.dialogues.length===0)) {
+        openAP(G.nearV);
+      } else {
+        openDialogue(G.nearV);
+      }
+    }
+  }
+  if(e.key==='Escape') { closeAP(); document.getElementById('fbp').style.display='none'; document.getElementById('dlg-wrap').style.display='none'; G.paused=false; }
+});
+document.addEventListener('keyup', e => { G.keys[e.key]=false; });
+
+function onScreen(x,y,pad=60){ return x>G.camX-pad&&x<G.camX+G.W+pad&&y>G.camY-pad&&y<G.camY+G.H+pad; }
+
+// ── STUDENT INFO ─────────────────────────────────────────────────────
+G.studentName = '';
+G.studentSection = '';
+
+// ══════════════════════════════════════════════════════════════════════
+// BADGES SYSTEM
+// ══════════════════════════════════════════════════════════════════════
+const BADGE_DEFS = [
+  {id:'first',    icon:'🏅', name:'First Responder',    desc:'Complete your first scenario'},
+  {id:'perfect',  icon:'⭐', name:'Perfect Score',       desc:'100% triage accuracy in one run'},
+  {id:'speed',    icon:'⚡', name:'Speed Triager',       desc:'Complete a scenario under 3 minutes'},
+  {id:'no_under', icon:'🛡️', name:'Zero Undertriage',    desc:'No undertriage errors in a run'},
+  {id:'black_ace',icon:'🖤', name:'Black Ace',           desc:'Correctly tag all BLACK patients'},
+  {id:'all12',    icon:'🌏', name:'All Hazards',         desc:'Complete all 12 scenarios'},
+  {id:'wound_pro',icon:'🩹', name:'Wound Pro',           desc:'Complete 5 wound interventions correctly'},
+  {id:'veteran',  icon:'🎖️', name:'Veteran Responder',   desc:'Complete 5 scenarios total'},
+];
+
+function loadBadges(){ try{return JSON.parse(localStorage.getItem('hct_badges')||'[]');}catch(e){return[];} }
+function saveBadges(arr){ try{localStorage.setItem('hct_badges',JSON.stringify(arr));}catch(e){} }
+function hasBadge(id){ return loadBadges().includes(id); }
+function awardBadge(id){
+  const b = BADGE_DEFS.find(x=>x.id===id); if(!b) return;
+  if(hasBadge(id)) return;
+  const arr = loadBadges(); arr.push(id); saveBadges(arr);
+  showBadgeToast(b);
+}
+function showBadgeToast(b){
+  const t=document.getElementById('badge-toast');
+  document.getElementById('bt-icon').textContent=b.icon;
+  document.getElementById('bt-name').textContent=b.name;
+  t.style.display='flex';
+  setTimeout(()=>t.style.display='none', 3000);
+}
+function renderBadgeShelf(){
+  const earned=loadBadges();
+  const shelf=document.getElementById('badge-shelf');
+  if(!shelf) return;
+  shelf.innerHTML = earned.length===0
+    ? '<span style="font-size:11px;color:#7a8fa6;font-family:VT323,monospace">No badges yet — complete scenarios to earn them</span>'
+    : earned.map(id=>{const b=BADGE_DEFS.find(x=>x.id===id);return b?`<span class="badge-chip" title="${b.desc}">${b.icon} ${b.name}</span>`:''}).join('');
+}
+function checkBadges(){
+  const tot=G.assessed, cor=G.score, pct=tot>0?Math.round(cor/tot*100):0;
+  const under=G.scoreLog.filter(h=>h.v.correct==='red'&&h.tag!=='red').length;
+  const blackTotal=G.scoreLog.filter(h=>h.v.correct==='black').length;
+  const blackCorrect=G.scoreLog.filter(h=>h.v.correct==='black'&&h.ok).length;
+  // scenarios completed count
+  let sc=0; try{sc=parseInt(localStorage.getItem('hct_sc')||'0');}catch(e){}
+  sc++; try{localStorage.setItem('hct_sc',sc);}catch(e){}
+  // wound interventions
+  let wi=0; try{wi=parseInt(localStorage.getItem('hct_wi')||'0');}catch(e){}
+
+  awardBadge('first');
+  if(pct===100) awardBadge('perfect');
+  if(G.elapsed<180) awardBadge('speed');
+  if(under===0) awardBadge('no_under');
+  if(blackTotal>0&&blackCorrect===blackTotal) awardBadge('black_ace');
+  if(wi>=5) awardBadge('wound_pro');
+  if(sc>=5) awardBadge('veteran');
+  // all 12 scenarios: track which were completed
+  let done=[]; try{done=JSON.parse(localStorage.getItem('hct_done')||'[]');}catch(e){}
+  if(!done.includes(G.scenario.id)) done.push(G.scenario.id);
+  try{localStorage.setItem('hct_done',JSON.stringify(done));}catch(e){}
+  if(done.length>=12) awardBadge('all12');
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// AMBIENT AUDIO ENGINE
+// ══════════════════════════════════════════════════════════════════════
+const AMB = {
+  nodes: [],
+  stop(){ AMB.nodes.forEach(n=>{try{n.stop();}catch(e){}}); AMB.nodes=[]; },
+  play(type){
+    AMB.stop();
+    if(!AC) return;
+    const vol = G.masterVol !== undefined ? G.masterVol : 0.6;
+    const gain = AC.createGain(); gain.gain.value = vol * 0.18;
+    gain.connect(AC.destination);
+    AMB._masterGain = gain;
+    if(type==='typhoon') AMB._typhoon(gain);
+    else if(type==='fire') AMB._fire(gain);
+    else if(type==='earthquake'||type==='rubble') AMB._quake(gain);
+    else AMB._crowd(gain);
+  },
+  _updateVol(){ if(AMB._masterGain) AMB._masterGain.gain.value = (G.masterVol||0.6)*0.18; },
+  _typhoon(out){
+    // Wind: filtered noise sweep
+    const buf=AC.createBuffer(1,AC.sampleRate*4,AC.sampleRate);
+    const d=buf.getChannelData(0);
+    for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1);
+    const src=AC.createBufferSource(); src.buffer=buf; src.loop=true;
+    const filt=AC.createBiquadFilter(); filt.type='bandpass'; filt.frequency.value=400; filt.Q.value=0.4;
+    const lfo=AC.createOscillator(); lfo.frequency.value=0.08; lfo.type='sine';
+    const lfoG=AC.createGain(); lfoG.gain.value=200;
+    lfo.connect(lfoG); lfoG.connect(filt.frequency);
+    src.connect(filt); filt.connect(out); src.start(); lfo.start();
+    AMB.nodes.push(src,lfo);
+    // Rain: high noise
+    const buf2=AC.createBuffer(1,AC.sampleRate*2,AC.sampleRate);
+    const d2=buf2.getChannelData(0);
+    for(let i=0;i<d2.length;i++) d2[i]=(Math.random()*2-1)*0.3;
+    const src2=AC.createBufferSource(); src2.buffer=buf2; src2.loop=true;
+    const f2=AC.createBiquadFilter(); f2.type='highpass'; f2.frequency.value=3000;
+    src2.connect(f2); f2.connect(out); src2.start();
+    AMB.nodes.push(src2);
+  },
+  _fire(out){
+    // Crackle: low-freq pops + hiss
+    const makecrackle=()=>{
+      const buf=AC.createBuffer(1,AC.sampleRate*.04,AC.sampleRate);
+      const d=buf.getChannelData(0);
+      for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.exp(-i/d.length*8);
+      const src=AC.createBufferSource(); src.buffer=buf;
+      const g=AC.createGain(); g.gain.value=0.4+Math.random()*0.6;
+      src.connect(g); g.connect(out); src.start(AC.currentTime+Math.random()*0.3);
+      setTimeout(makecrackle, 100+Math.random()*400);
+      AMB.nodes.push(src);
+    };
+    makecrackle();
+    // Hiss
+    const hbuf=AC.createBuffer(1,AC.sampleRate*3,AC.sampleRate);
+    const hd=hbuf.getChannelData(0);
+    for(let i=0;i<hd.length;i++) hd[i]=(Math.random()*2-1)*0.12;
+    const hs=AC.createBufferSource(); hs.buffer=hbuf; hs.loop=true;
+    const hf=AC.createBiquadFilter(); hf.type='bandpass'; hf.frequency.value=600; hf.Q.value=0.3;
+    hs.connect(hf); hf.connect(out); hs.start(); AMB.nodes.push(hs);
+  },
+  _quake(out){
+    // Low rumble
+    const osc=AC.createOscillator(); osc.type='sawtooth'; osc.frequency.value=28;
+    const g=AC.createGain(); g.gain.value=0.6;
+    const lfo=AC.createOscillator(); lfo.frequency.value=0.3; lfo.type='sine';
+    const lg=AC.createGain(); lg.gain.value=0.4;
+    lfo.connect(lg); lg.connect(g.gain); osc.connect(g); g.connect(out);
+    osc.start(); lfo.start(); AMB.nodes.push(osc,lfo);
+    // Debris settle
+    const makebang=()=>{
+      if(!AC) return;
+      const buf=AC.createBuffer(1,AC.sampleRate*.15,AC.sampleRate);
+      const d=buf.getChannelData(0);
+      for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.exp(-i/d.length*12)*0.8;
+      const src=AC.createBufferSource(); src.buffer=buf;
+      src.connect(out); src.start();
+      setTimeout(makebang, 2000+Math.random()*5000);
+      AMB.nodes.push(src);
+    };
+    makebang();
+  },
+  _crowd(out){
+    // Layered murmur
+    [180,320,480,600].forEach((freq,i)=>{
+      const buf=AC.createBuffer(1,AC.sampleRate*3,AC.sampleRate);
+      const d=buf.getChannelData(0);
+      for(let j=0;j<d.length;j++) d[j]=(Math.random()*2-1)*0.15;
+      const src=AC.createBufferSource(); src.buffer=buf; src.loop=true;
+      const f=AC.createBiquadFilter(); f.type='bandpass'; f.frequency.value=freq; f.Q.value=0.5;
+      const g=AC.createGain(); g.gain.value=0.3+Math.random()*0.3;
+      src.connect(f); f.connect(g); g.connect(out); src.start(AC.currentTime+i*0.2);
+      AMB.nodes.push(src);
+    });
+  }
+};
+
+// Volume slider live update
+setInterval(()=>{ AMB._updateVol(); }, 200);
+
+// ══════════════════════════════════════════════════════════════════════
+// WOUND INTERVENTION SYSTEM
+// ══════════════════════════════════════════════════════════════════════
+const SUPPLIES = [
+  {id:'sterile_dressing', label:'Sterile Dressing', correct:true, tourniquet:false,
+   draw:(c)=>{
+     // White gauze pad
+     c.fillStyle='#f0f0f0'; c.fillRect(8,10,44,28);
+     c.strokeStyle='#cccccc'; c.lineWidth=1; c.strokeRect(8,10,44,28);
+     // Blue border
+     c.strokeStyle='#4488cc'; c.lineWidth=2; c.strokeRect(10,12,40,24);
+     // Cross
+     c.strokeStyle='#cc3333'; c.lineWidth=2;
+     c.beginPath(); c.moveTo(28,14); c.lineTo(28,34); c.stroke();
+     c.beginPath(); c.moveTo(18,24); c.lineTo(38,24); c.stroke();
+     c.fillStyle='#888'; c.font='9px sans-serif'; c.textAlign='center';
+     c.fillText('STERILE',30,50);
+   }},
+  {id:'bandage', label:'Bandage Roll', correct:true, tourniquet:false,
+   draw:(c)=>{
+     // Roll of bandage
+     c.fillStyle='#f5f0e8'; c.beginPath(); c.arc(30,22,16,0,Math.PI*2); c.fill();
+     c.strokeStyle='#ccbbaa'; c.lineWidth=1; c.stroke();
+     // Inner hole
+     c.fillStyle='#ddd'; c.beginPath(); c.arc(30,22,5,0,Math.PI*2); c.fill();
+     // Wrap lines
+     c.strokeStyle='#ccbbaa'; c.lineWidth=1;
+     for(let i=1;i<4;i++){ c.beginPath(); c.arc(30,22,5+i*3,0,Math.PI*2); c.stroke(); }
+     c.fillStyle='#888'; c.font='9px sans-serif'; c.textAlign='center';
+     c.fillText('BANDAGE',30,50);
+   }},
+  {id:'tourniquet', label:'Tourniquet', correct:false, tourniquet:true,
+   draw:(c)=>{
+     // Red band
+     c.fillStyle='#cc0000'; c.fillRect(5,14,50,12);
+     c.fillStyle='#aa0000'; c.fillRect(5,14,50,4);
+     // Buckle
+     c.fillStyle='#888'; c.fillRect(24,10,12,20);
+     c.fillStyle='#666'; c.fillRect(26,12,8,16);
+     // TQ label
+     c.fillStyle='#fff'; c.font='bold 8px sans-serif'; c.textAlign='center';
+     c.fillText('TQ',30,22);
+     c.fillStyle='#888'; c.font='9px sans-serif';
+     c.fillText('TOURNIQUET',30,50);
+   }},
+  {id:'tape', label:'Medical Tape', correct:false, tourniquet:false,
+   draw:(c)=>{
+     // Roll of tape
+     c.fillStyle='#e8e8cc'; c.beginPath(); c.arc(30,22,15,0,Math.PI*2); c.fill();
+     c.strokeStyle='#cccc88'; c.lineWidth=1; c.stroke();
+     c.fillStyle='#d0d088'; c.beginPath(); c.arc(30,22,6,0,Math.PI*2); c.fill();
+     c.strokeStyle='#bbbb66'; c.lineWidth=1; c.stroke();
+     c.fillStyle='#888'; c.font='9px sans-serif'; c.textAlign='center';
+     c.fillText('TAPE',30,50);
+   }},
+  {id:'saline', label:'Saline Wash', correct:false, tourniquet:false,
+   draw:(c)=>{
+     // Saline bottle
+     c.fillStyle='#88aadd'; c.beginPath();
+     c.roundRect(18,6,24,36,4); c.fill();
+     c.strokeStyle='#5588bb'; c.lineWidth=1; c.stroke();
+     // Label
+     c.fillStyle='#fff'; c.fillRect(21,16,18,16);
+     c.fillStyle='#3355aa'; c.font='7px sans-serif'; c.textAlign='center';
+     c.fillText('0.9%',30,27);
+     c.fillStyle='#888'; c.font='9px sans-serif';
+     c.fillText('SALINE',30,52);
+   }},
+  {id:'gloves', label:'Gloves', correct:false, tourniquet:false,
+   draw:(c)=>{
+     // Glove
+     c.fillStyle='#88eeaa'; c.beginPath();
+     c.moveTo(20,40); c.lineTo(16,20); c.lineTo(20,8); c.lineTo(22,8);
+     c.lineTo(21,18); c.lineTo(24,6); c.lineTo(27,6); c.lineTo(26,18);
+     c.lineTo(28,4); c.lineTo(31,4); c.lineTo(30,18);
+     c.lineTo(33,8); c.lineTo(36,8); c.lineTo(34,18);
+     c.lineTo(40,22); c.lineTo(40,40); c.closePath(); c.fill();
+     c.strokeStyle='#44bb66'; c.lineWidth=1; c.stroke();
+     c.fillStyle='#888'; c.font='9px sans-serif'; c.textAlign='center';
+     c.fillText('GLOVES',30,54);
+   }},
+];
+
+const WND = {
+  active: false,
+  victim: null,
+  phase: 'pressure', // pressure | supplies | tourniquet | done
+  timer: 0,
+  holding: false,
+  holdStart: 0,
+  selected: new Set(),
+  needsTQ: false,
+  limb: false,
+};
+
+function hasBleedingInjury(v) {
+  return v.injuries && v.injuries.some(i =>
+    ['hemorrhage','laceration','wound'].includes(i.type)
+  );
+}
+
+function isLimbBleed(v) {
+  return v.injuries && v.injuries.some(i =>
+    i.type==='hemorrhage' && (i.loc==='thigh'||i.loc==='arm')
+  );
+}
+
+function triggerWoundIntervention(v) {
+  if(!hasBleedingInjury(v)) return false;
+  WND.victim = v;
+  WND.phase = 'pressure';
+  WND.holding = false;
+  WND.holdStart = 0;
+  WND.selected = new Set();
+  WND.limb = isLimbBleed(v);
+  // 40% chance TQ needed IF limb bleed — non-limb ALWAYS resolves with dressing
+  WND.needsTQ = WND.limb && Math.random() < 0.4;
+  WND.active = true;
+  G.paused = true;
+  showWoundOverlay();
+  return true;
+}
+
+function showWoundOverlay() {
+  const ov = document.getElementById('wound-overlay');
+  ov.style.display = 'flex';
+  document.getElementById('wo-supplies').style.display = 'none';
+  document.getElementById('wo-multi-hint').style.display = 'none';
+  document.getElementById('wo-confirm').style.display = 'none';
+  document.getElementById('wo-skip').style.display = 'block';
+
+  if(WND.phase === 'pressure') {
+    document.getElementById('wo-title').textContent = 'WOUND MANAGEMENT — STEP 1';
+    document.getElementById('wo-instruction').textContent =
+      'Hold the wound with direct pressure. Hold mouse button / tap and hold for 3 seconds.';
+    document.getElementById('wo-progress-bar').style.display = 'block';
+    document.getElementById('wo-pb-fill').style.width = '0%';
+    document.getElementById('wo-pb-fill').style.background = '#e74c3c';
+    drawWoundCanvas();
+    setupPressureHold();
+  } else if(WND.phase === 'supplies') {
+    document.getElementById('wo-title').textContent = 'WOUND MANAGEMENT — SELECT SUPPLIES';
+    document.getElementById('wo-instruction').textContent =
+      'Choose appropriate materials to dress the wound. Select all that apply.';
+    document.getElementById('wo-progress-bar').style.display = 'none';
+    drawWoundCanvas();
+    buildSupplyButtons(false);
+  } else if(WND.phase === 'tourniquet') {
+    document.getElementById('wo-title').textContent = 'WOUND MANAGEMENT — TOURNIQUET REQUIRED';
+    document.getElementById('wo-instruction').textContent =
+      'Dressing alone is insufficient. Select a tourniquet and apply 5cm proximal to wound.';
+    document.getElementById('wo-progress-bar').style.display = 'none';
+    drawWoundCanvas();
+    buildSupplyButtons(true);
+  }
+}
+
+function drawWoundCanvas() {
+  const c = document.getElementById('wound-canvas'); if(!c) return;
+  const ctx = c.getContext('2d'); ctx.imageSmoothingEnabled = false;
+  ctx.clearRect(0,0,320,220);
+  // Background — medical setting
+  ctx.fillStyle = '#1a0808'; ctx.fillRect(0,0,320,220);
+  // Floor/ground
+  ctx.fillStyle = '#2a1a14'; ctx.fillRect(0,160,320,60);
+  // Grid lines
+  ctx.strokeStyle = 'rgba(100,60,40,0.3)'; ctx.lineWidth = 1;
+  for(let x=0;x<320;x+=20){ ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,220);ctx.stroke(); }
+  for(let y=0;y<220;y+=20){ ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(320,y);ctx.stroke(); }
+
+  const v = WND.victim; if(!v) return;
+  // Draw simplified body part with wound
+  const inj = v.injuries.find(i=>['hemorrhage','laceration','wound'].includes(i.type));
+  if(!inj) return;
+
+  const cx=160, cy=100;
+  if(inj.loc==='thigh'||inj.loc==='leg') {
+    // Thigh/leg
+    ctx.fillStyle='#d4a574'; ctx.fillRect(cx-18,cy-50,36,110);
+    // Pants
+    ctx.fillStyle='#2c3e50'; ctx.fillRect(cx-20,cy-55,40,60);
+    // Wound
+    drawWoundSite(ctx,cx,cy+10,'arterial');
+  } else if(inj.loc==='arm') {
+    // Arm
+    ctx.fillStyle='#8b6b3d'; ctx.fillRect(cx-12,cy-40,24,90);
+    ctx.fillStyle='#d4a574'; ctx.fillRect(cx-10,cy-38,20,86);
+    drawWoundSite(ctx,cx,cy+5,'laceration');
+  } else if(inj.loc==='abdomen') {
+    // Torso
+    ctx.fillStyle='#5d8aa8'; ctx.fillRect(cx-40,cy-60,80,100);
+    ctx.fillStyle='#d4a574'; ctx.fillRect(cx-34,cy-55,68,90);
+    drawWoundSite(ctx,cx-5,cy,'evisceration');
+  } else {
+    // Default — arm/torso
+    ctx.fillStyle='#d4a574'; ctx.fillRect(cx-28,cy-45,56,90);
+    drawWoundSite(ctx,cx,cy,'laceration');
+  }
+
+  // If supplies applied - show dressing on wound
+  if(WND.phase==='tourniquet') {
+    // Show failed dressing (soaked through)
+    ctx.fillStyle='rgba(200,50,50,0.8)'; ctx.fillRect(cx-14,cy-10,28,22);
+    ctx.fillStyle='rgba(255,255,255,0.4)'; ctx.fillRect(cx-12,cy-8,24,18);
+    ctx.fillStyle='rgba(180,0,0,0.6)'; ctx.fillRect(cx-10,cy-4,20,10);
+    // TQ placement guide
+    if(inj.loc==='thigh'||inj.loc==='leg') {
+      ctx.strokeStyle='rgba(255,200,0,0.7)'; ctx.lineWidth=2; ctx.setLineDash([4,4]);
+      ctx.beginPath(); ctx.moveTo(cx-22,cy-35); ctx.lineTo(cx+22,cy-35); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle='rgba(255,200,0,0.9)'; ctx.font='10px sans-serif'; ctx.textAlign='center';
+      ctx.fillText('Apply TQ HERE ↑',cx,cy-42);
+    } else if(inj.loc==='arm') {
+      ctx.strokeStyle='rgba(255,200,0,0.7)'; ctx.lineWidth=2; ctx.setLineDash([4,4]);
+      ctx.beginPath(); ctx.moveTo(cx-14,cy-25); ctx.lineTo(cx+14,cy-25); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle='rgba(255,200,0,0.9)'; ctx.font='10px sans-serif'; ctx.textAlign='center';
+      ctx.fillText('Apply TQ HERE ↑',cx,cy-32);
+    }
+  } else if(WND.phase==='done_dressing') {
+    // Show proper dressing
+    ctx.fillStyle='rgba(240,240,240,0.9)'; ctx.fillRect(cx-16,cy-12,32,26);
+    ctx.strokeStyle='#4488cc'; ctx.lineWidth=1; ctx.strokeRect(cx-14,cy-10,28,22);
+    ctx.strokeStyle='#cc3333'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(cx,cy-8); ctx.lineTo(cx,cy+10); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx-8,cy+1); ctx.lineTo(cx+8,cy+1); ctx.stroke();
+    // Bandage wraps
+    ctx.strokeStyle='rgba(240,230,210,0.7)'; ctx.lineWidth=3;
+    for(let i=-1;i<=1;i++){ ctx.beginPath(); ctx.moveTo(cx-22,cy+i*8); ctx.lineTo(cx+22,cy+i*8); ctx.stroke(); }
+  }
+
+  // Pressure indicator
+  if(WND.phase==='pressure' && WND.holding) {
+    ctx.fillStyle='rgba(26,184,160,0.3)'; ctx.beginPath(); ctx.arc(cx,cy+5,30,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='rgba(26,184,160,0.9)'; ctx.font='bold 12px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('HOLDING PRESSURE',cx,cy+50);
+  }
+}
+
+function drawWoundSite(ctx, x, y, type) {
+  if(type==='arterial'||type==='laceration') {
+    ctx.fillStyle='#8b0000'; ctx.fillRect(x-12,y-5,24,12);
+    ctx.fillStyle='#cc0000'; ctx.fillRect(x-10,y-3,20,8);
+    ctx.fillStyle='#ff3333'; ctx.fillRect(x-6,y-2,12,5);
+    // Blood pool
+    ctx.fillStyle='rgba(139,0,0,0.6)'; ctx.beginPath(); ctx.ellipse(x,y+12,18,8,0,0,Math.PI*2); ctx.fill();
+  } else if(type==='evisceration') {
+    ctx.fillStyle='#cc3333'; ctx.fillRect(x-18,y-8,36,18);
+    ctx.fillStyle='#dd7744'; ctx.fillRect(x-14,y-5,28,12);
+    ctx.fillStyle='rgba(139,0,0,0.7)'; ctx.beginPath(); ctx.ellipse(x,y+14,20,9,0,0,Math.PI*2); ctx.fill();
+  }
+}
+
+function setupPressureHold() {
+  const c = document.getElementById('wound-canvas'); if(!c) return;
+  let holding = false, start = 0, raf = null;
+  const HOLD_MS = 3000;
+
+  function startHold(e){
+    e.preventDefault(); holding=true; start=Date.now(); WND.holding=true;
+    drawWoundCanvas();
+    function tick(){
+      if(!holding) return;
+      const elapsed = Date.now()-start;
+      const pct = Math.min(100, elapsed/HOLD_MS*100);
+      const pb = document.getElementById('wo-pb-fill'); if(pb) pb.style.width=pct+'%';
+      if(elapsed >= HOLD_MS) {
+        holding=false; WND.holding=false;
+        WND.phase='supplies';
+        showWoundOverlay();
+        return;
+      }
+      raf = requestAnimationFrame(tick);
+    }
+    tick();
+  }
+  function endHold(e){
+    e.preventDefault(); holding=false; WND.holding=false;
+    if(raf) cancelAnimationFrame(raf);
+    drawWoundCanvas();
+    const pb = document.getElementById('wo-pb-fill'); if(pb) pb.style.width='0%';
+  }
+  c.addEventListener('mousedown', startHold);
+  c.addEventListener('mouseup', endHold);
+  c.addEventListener('mouseleave', endHold);
+  c.addEventListener('touchstart', startHold, {passive:false});
+  c.addEventListener('touchend', endHold, {passive:false});
+  c._cleanup = ()=>{ c.removeEventListener('mousedown',startHold); c.removeEventListener('mouseup',endHold); c.removeEventListener('mouseleave',endHold); c.removeEventListener('touchstart',startHold); c.removeEventListener('touchend',endHold); };
+}
+
+function buildSupplyButtons(tqMode) {
+  const cont = document.getElementById('wo-supplies'); cont.innerHTML='';
+  WND.selected.clear();
+  const pool = tqMode
+    ? SUPPLIES.filter(s=>s.tourniquet || s.id==='sterile_dressing'||s.id==='bandage'||s.id==='tape')
+    : SUPPLIES.filter(s=>!s.tourniquet);
+  pool.forEach(sup=>{
+    const btn=document.createElement('button');
+    btn.className='supply-btn'; btn.dataset.id=sup.id;
+    const sc=document.createElement('canvas'); sc.className='supply-img'; sc.width=60; sc.height=56;
+    sc.style.cssText='width:60px;height:56px;image-rendering:pixelated;';
+    const sc2=sc.getContext('2d'); sc2.imageSmoothingEnabled=false;
+    sup.draw(sc2);
+    btn.appendChild(sc);
+    const lbl=document.createElement('span'); lbl.textContent=sup.label; btn.appendChild(lbl);
+    btn.onclick=()=>{
+      if(WND.selected.has(sup.id)) { WND.selected.delete(sup.id); btn.classList.remove('selected'); }
+      else { WND.selected.add(sup.id); btn.classList.add('selected'); }
+    };
+    cont.appendChild(btn);
+  });
+  cont.style.display='flex';
+  document.getElementById('wo-multi-hint').style.display='block';
+  document.getElementById('wo-confirm').style.display='block';
+}
+
+function confirmSupplies() {
+  const sel = Array.from(WND.selected);
+  if(sel.length===0) return;
+
+  if(WND.phase==='tourniquet') {
+    // Must include tourniquet
+    if(sel.includes('tourniquet')) {
+      // Apply TQ animation
+      document.getElementById('wo-instruction').textContent=
+        'Tourniquet applied 5cm proximal to wound. Hemorrhage controlled. Well done.';
+      document.getElementById('wo-supplies').style.display='none';
+      document.getElementById('wo-confirm').style.display='none';
+      document.getElementById('wo-multi-hint').style.display='none';
+      WND.phase='done'; drawWoundCanvas();
+      // Increment wound pro counter
+      let wi=0; try{wi=parseInt(localStorage.getItem('hct_wi')||'0');}catch(e){}
+      try{localStorage.setItem('hct_wi',wi+1);}catch(e){}
+      SFX.ok();
+      setTimeout(closeWoundOverlay, 2000);
+    } else {
+      document.getElementById('wo-instruction').textContent=
+        'Incorrect. A tourniquet is required for arterial limb hemorrhage. Select the tourniquet.';
+      SFX.fail();
+    }
+  } else {
+    // supplies phase — need sterile_dressing AND bandage
+    const hasDressing = sel.includes('sterile_dressing');
+    const hasBandage = sel.includes('bandage');
+    if(hasDressing && hasBandage) {
+      if(WND.needsTQ) {
+        // Dressing fails — escalate to TQ
+        document.getElementById('wo-instruction').textContent=
+          'Dressing applied, but bleeding is NOT controlled. Arterial hemorrhage requires tourniquet application.';
+        WND.phase='tourniquet';
+        document.getElementById('wo-supplies').style.display='none';
+        document.getElementById('wo-confirm').style.display='none';
+        document.getElementById('wo-multi-hint').style.display='none';
+        SFX.warn();
+        setTimeout(()=>showWoundOverlay(), 2200);
+      } else {
+        // Success
+        document.getElementById('wo-instruction').textContent=
+          'Correct! Sterile dressing and bandage applied. Wound dressed and secured.';
+        document.getElementById('wo-supplies').style.display='none';
+        document.getElementById('wo-confirm').style.display='none';
+        document.getElementById('wo-multi-hint').style.display='none';
+        WND.phase='done_dressing'; drawWoundCanvas();
+        let wi=0; try{wi=parseInt(localStorage.getItem('hct_wi')||'0');}catch(e){}
+        try{localStorage.setItem('hct_wi',wi+1);}catch(e){}
+        SFX.ok();
+        setTimeout(closeWoundOverlay, 2000);
+      }
+    } else {
+      const missing = !hasDressing ? 'sterile dressing' : 'bandage roll';
+      document.getElementById('wo-instruction').textContent=
+        `Incomplete. You need both a sterile dressing AND a bandage roll. Missing: ${missing}.`;
+      SFX.fail();
+    }
+  }
+}
+
+function closeWoundOverlay() {
+  WND.active=false; G.paused=false;
+  const ov=document.getElementById('wound-overlay'); ov.style.display='none';
+  const c=document.getElementById('wound-canvas');
+  if(c&&c._cleanup) { c._cleanup(); delete c._cleanup; }
+  // Continue to AP
+  if(WND.victim) openAP(WND.victim);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// PDF / PRINT REPORT
+// ══════════════════════════════════════════════════════════════════════
+function downloadReport() {
+  const tot=G.assessed, cor=G.score, pct=tot>0?Math.round(cor/tot*100):0;
+  const over=G.scoreLog.filter(h=>h.tag==='red'&&h.v.correct!=='red').length;
+  const under=G.scoreLog.filter(h=>h.v.correct==='red'&&h.tag!=='red').length;
+  const miss=G.scoreLog.filter(h=>h.v.correct==='red'&&h.tag==='green').length;
+  const m=Math.floor(G.elapsed/60),s=Math.floor(G.elapsed%60);
+  const tStr=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  const now=new Date().toLocaleDateString('en-PH',{year:'numeric',month:'long',day:'numeric'});
+  const earned=loadBadges();
+  const badgesHTML=earned.map(id=>{const b=BADGE_DEFS.find(x=>x.id===id);return b?`<span style="background:#ffeaa0;border:1px solid #ccaa00;border-radius:12px;padding:2px 10px;font-size:11px;margin:2px;display:inline-block">${b.icon} ${b.name}</span>`:''}).join('');
+  const decisionsHTML=G.assessLog.map((p,i)=>`
+    <tr style="background:${i%2===0?'#f9f9f9':'#fff'}">
+      <td style="padding:5px 8px;border:1px solid #ddd">${i+1}</td>
+      <td style="padding:5px 8px;border:1px solid #ddd">${p.name}</td>
+      <td style="padding:5px 8px;border:1px solid #ddd;font-weight:bold;color:${p.assigned==='red'?'#c0392b':p.assigned==='yellow'?'#d68910':p.assigned==='green'?'#1e8449':'#555'}">${p.assigned.toUpperCase()}</td>
+      <td style="padding:5px 8px;border:1px solid #ddd;color:#1e8449">${p.correct.toUpperCase()}</td>
+      <td style="padding:5px 8px;border:1px solid #ddd;text-align:center;color:${p.ok?'#1e8449':'#c0392b'}">${p.ok?'✓ Correct':'✗ Error'}</td>
+    </tr>`).join('');
+
+  const perfText = pct>=90
+    ?`Exceptional performance. ${pct}% triage accuracy demonstrates mastery of START triage principles.`
+    :pct>=70?`Good performance (${pct}%). Review undertriage cases to prevent missed RED patients.`
+    :`Needs improvement (${pct}%). Review START algorithm: RR>30, absent radial pulse, or AVPU≠A → RED.`;
+
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>HCT Triage Simulator — After Action Report</title>
+<style>
+  body{font-family:Arial,sans-serif;margin:30px;color:#222;font-size:13px;}
+  h1{color:#0d4f6e;font-size:20px;margin:0 0 4px;}
+  h2{color:#0d4f6e;font-size:14px;border-bottom:2px solid #0d4f6e;padding-bottom:4px;margin:18px 0 8px;}
+  .header{border-bottom:3px solid #0d4f6e;padding-bottom:12px;margin-bottom:16px;display:flex;justify-content:space-between;}
+  .meta{font-size:12px;color:#555;}
+  .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:10px 0;}
+  .stat{background:#f0f6fa;border:1px solid #bee0f0;border-radius:6px;padding:10px;text-align:center;}
+  .stat-val{font-size:22px;font-weight:bold;color:#0d4f6e;}
+  .stat-lbl{font-size:11px;color:#666;margin-top:2px;}
+  table{width:100%;border-collapse:collapse;font-size:12px;}
+  th{background:#0d4f6e;color:#fff;padding:6px 8px;border:1px solid #0d4f6e;text-align:left;}
+  .pearls-box{background:#f9f9f9;border:1px solid #ddd;border-radius:6px;padding:12px;margin:8px 0;}
+  .pearls-item{margin:6px 0;}
+  .pearls-label{font-weight:bold;color:#0d4f6e;font-size:12px;}
+  .pearls-blank{border-bottom:1px solid #aaa;display:inline-block;width:300px;margin-left:8px;}
+  @media print{body{margin:15px;} button{display:none;}}
+</style></head><body>
+<div class="header">
+  <div>
+    <h1>HCT Triage Simulator</h1>
+    <div style="font-size:13px;color:#0d4f6e;font-weight:bold">After Action Report</div>
+  </div>
+  <div class="meta" style="text-align:right">
+    <div>${now}</div>
+    <div>Student: <b>${G.studentName||'—'}</b></div>
+    <div>Section: <b>${G.studentSection||'—'}</b></div>
+    <div>Scenario: <b>${G.scenario?G.scenario.name:'—'}</b></div>
+    <div>Time Elapsed: <b>${tStr}</b></div>
+  </div>
+</div>
+
+<h2>Performance Summary</h2>
+<div class="stat-grid">
+  <div class="stat"><div class="stat-val" style="color:${pct>=80?'#1e8449':pct>=60?'#d68910':'#c0392b'}">${pct}%</div><div class="stat-lbl">Overall Score</div></div>
+  <div class="stat"><div class="stat-val">${cor}/${tot}</div><div class="stat-lbl">Correct Triage</div></div>
+  <div class="stat"><div class="stat-val" style="color:${over>0?'#d68910':'#1e8449'}">${over}</div><div class="stat-lbl">Overtriage</div></div>
+  <div class="stat"><div class="stat-val" style="color:${under>0?'#c0392b':'#1e8449'}">${under}</div><div class="stat-lbl">Undertriage</div></div>
+  <div class="stat"><div class="stat-val" style="color:${miss>0?'#c0392b':'#1e8449'}">${miss}</div><div class="stat-lbl">Missed Critical</div></div>
+  <div class="stat"><div class="stat-val">${tStr}</div><div class="stat-lbl">Completion Time</div></div>
+</div>
+
+<h2>Triage Decision Log</h2>
+<table><thead><tr><th>#</th><th>Patient</th><th>Assigned</th><th>Correct</th><th>Result</th></tr></thead>
+<tbody>${decisionsHTML}</tbody></table>
+
+<h2>Automated Performance Analysis</h2>
+<p style="background:#f0f6fa;border-left:4px solid #0d4f6e;padding:10px;border-radius:0 6px 6px 0">${perfText}</p>
+
+<h2>PEARLS Debriefing Rubric</h2>
+<div class="pearls-box">
+  <div class="pearls-item"><span class="pearls-label">What went well during triage?</span><br><span class="pearls-blank">&nbsp;</span></div>
+  <div class="pearls-item"><span class="pearls-label">What was most challenging?</span><br><span class="pearls-blank">&nbsp;</span></div>
+  <div class="pearls-item"><span class="pearls-label">Which START criteria were most difficult to apply?</span><br><span class="pearls-blank">&nbsp;</span></div>
+  <div class="pearls-item"><span class="pearls-label">What would you do differently next time?</span><br><span class="pearls-blank">&nbsp;</span></div>
+  <div class="pearls-item"><span class="pearls-label">Key learning points from this scenario:</span><br><span class="pearls-blank">&nbsp;</span></div>
+  <div class="pearls-item"><span class="pearls-label">Faculty comments:</span><br><span class="pearls-blank">&nbsp;</span></div>
+</div>
+
+${earned.length>0?`<h2>Badges Earned</h2><div>${badgesHTML}</div>`:''}
+
+<div style="margin-top:20px;text-align:center;font-size:10px;color:#aaa">
+  HCT Academy · Research & Development Education Department · Pasig City, Philippines<br>
+  Generated by HCT Triage Simulator v4.0
+</div>
+<script>window.onload=()=>window.print();<\/script>
+</body></html>`;
+
+  const w=window.open('','_blank');
+  if(w) { w.document.write(html); w.document.close(); }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// PATCH startGame to capture student info + start ambient
+// ══════════════════════════════════════════════════════════════════════
+const _origStartGame = startGame;
+// Override buildTitle to ensure renderBadgeShelf runs
+const _origBuildTitle = buildTitle;
+
+// ══════════════════════════════════════════════════════════════════════
+// PATCH showAnalytics to check badges + render in report
+// ══════════════════════════════════════════════════════════════════════
+const _origShowAnalytics = showAnalytics;
+function showAnalytics() {
+  _origShowAnalytics();
+  checkBadges();
+  const earned=loadBadges();
+  const r=document.getElementById('badge-report');
+  if(r) r.innerHTML=earned.map(id=>{const b=BADGE_DEFS.find(x=>x.id===id);return b?`<span class="badge-chip">${b.icon} ${b.name}</span>`:''}).join('');
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// PATCH assignTag to trigger wound intervention
+// ══════════════════════════════════════════════════════════════════════
+const _origAssignTag = assignTag;
+function assignTag(tag) {
+  const v = G.activeV;
+  const correctTag = v.correct || v.cat;
+  const ok = tag === correctTag;
+  v.tagged = tag; v.assessed = true; G.assessed++;
+  if(ok) G.score++;
+  G.scoreLog.push({v, tag, ok, correctTag});
+  G.assessLog.push({name:v.name, assigned:tag, correct:correctTag, ok});
+  document.getElementById('tp').style.display='none';
+  document.getElementById('ap').style.display='none';
+  showTagFeedback(v, tag, ok);
+  elog(`Tagged ${tag.toUpperCase()}: ${v.name} — ${ok?'CORRECT':'INCORRECT'}`);
+  // After brief feedback, check wound intervention
+  const origV = v;
+  setTimeout(()=>{
+    G.activeV = null; G.paused = false;
+    if(hasBleedingInjury(origV)) {
+      setTimeout(()=>{
+        dismissFB();
+        triggerWoundIntervention(origV);
+      }, 1200);
+    }
+  }, 100);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// PATCH toMenu to stop ambient audio + fix state
+// ══════════════════════════════════════════════════════════════════════
+const _origToMenu = toMenu;
+function toMenu() {
+  AMB.stop();
+  _origToMenu();
+  renderBadgeShelf();
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// INIT with student name capture + ambient start
+// ══════════════════════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', ()=>{
+  buildTitle();
+  renderBadgeShelf();
+});
+
+// Patch startGame to capture name/section and start ambient
+const __origSG = window.startGame || startGame;
+window._patchedStart = function() {
+  initAC();
+  G.studentName = (document.getElementById('inp-name')||{value:''}).value.trim() || 'Student';
+  G.studentSection = (document.getElementById('inp-section')||{value:''}).value.trim() || '—';
+  G.masterVol = 0.6;
+  __origSG();
+  // Start ambient audio for this scenario
+  const ambMap = {
+    typhoon:'typhoon', flood:'typhoon',
+    fire:'fire', explode:'fire', chem:'fire',
+    quake:'earthquake',
+    mvc:'crowd', hospital:'crowd', airport:'crowd',
+    violence:'crowd', stadium:'crowd', train:'crowd'
+  };
+  const ambType = ambMap[G.scenario.id] || 'crowd';
+  setTimeout(()=>AMB.play(ambType), 1000);
+};
+
+</script>
+</body>
+</html>
+HTMLEOF
